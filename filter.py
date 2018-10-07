@@ -47,9 +47,9 @@ class Filter(ABC):
     # aplica el cambio de variable apropiado a un solo polo real o a un par conjugado
     # devuelve [denorm_poles, denorm_zeroes, gain_factor]
 
-    #INPUT:
+    # INPUT:
         # 1) pole: el polo a desnormalizar,  puede ser un complejo, en cuyo caso contara como tambien haber mandado su conjugado.
-    #OUTPUT:
+    # OUTPUT:
         # 1) denorm_poles: polos resultantes de desnormalizar. DEVUELVE DOS COMPLEJOS CONJUGADOS EN CASO DE ESTAR EN ESTA OPCION
                         # debera eliminarse el conjugado en caso de no necesitarlo!!!
         # 2) denorm_zeroes: ceros resultantes de desnormalizar. DEVUELVE DOS COMPLEJOS CONJUGADOS EN CASO DE ESTAR EN ESTA OPCION
@@ -62,18 +62,19 @@ class Filter(ABC):
 
     def calculate_poles(self):
         self.normalize()     # obtengo polos para la normalizada
+        # asignar self.poles y self.zeroes y self.k a lo que me devuelva el switcher de lp hp bp rb
         self.add_only_one_complex(self.poles)  # elimino uno de los dos complejos conjugados
         self.add_only_one_complex(self.zeros)
 
-        self.denormalize()      #desnormalizo todos los polos
+        self.denormalize()      # desnormalizo todos los polos
 
     # --------------------------
     # add_only_one_complex
     # -------------------------
-    #recorre la lista complex_nums, reconoce los numeros pertenecientes a C-R
-    #(parte imaginaria distinta de cero)
-    #de aqui elimina de la lista el complejo con parte imaginaria negativa y
-    #deja su conjugado en la lista.
+    # recorre la lista complex_nums, reconoce los numeros pertenecientes a C-R
+    # (parte imaginaria distinta de cero)
+    # de aqui elimina de la lista el complejo con parte imaginaria negativa y
+    # deja su conjugado en la lista.
 
     # INPUT:
         # 1) complex_nums: lista con numeros a la cual se le eliminara cualquier complejo con parte imaginaria negativa

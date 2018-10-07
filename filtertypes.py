@@ -6,10 +6,12 @@ class LowPass(filter.Filter):
         filter.Filter.__init__(self, "lp", approx, alphaP, alphaA, n)
         self.wp = template[0]
         self.wa = template[1]
+        self.wan = 0        #los inicializo en valores invalidos
+        self.wpn = 0
 
     def normalize(self):
-        self.wa = self.wa/self.wp
-        self.wp = 1
+        self.wan = self.wa/self.wp
+        self.wpn = 1
 
     def denormalize_one_pole(self,pole):
         # cambio de variable: s-> s/wp
@@ -35,10 +37,12 @@ class HighPass(filter.Filter):
         filter.Filter.__init__(self, "hp", approx, alphaP, alphaA, n)
         self.wp = template[0]
         self.wa = template[1]
+        self.wan = 0        #los inicializo en valores invalidos
+        self.wpn = 0
 
     def normalize(self):
-        self.wa = self.wp / self.wa
-        self.wp = 1
+        self.wan = self.wp / self.wa
+        self.wpn = 1
         pass
 
     def denormalize_one_pole(self, pole):
@@ -63,14 +67,19 @@ class HighPass(filter.Filter):
 class BandPass(filter.Filter):
     def __init__(self, approx, template, alphaP, alphaA, n):
         filter.Filter.__init__(self, "bp", approx, alphaP, alphaA, n)
-        self.w0 = template[0]
-        self.q = template[1]
-        self.wa_plus = None
-        self.wa_minus = None
-        self.wp_plus = None
-        self.wp_minus = None
+        self.wa_minus = template[0]
+        self.wp_minus = template[1]
+        self.wa_plus = template[2]
+        self.wp_plus = template[3]
+        self.wo = np.sqrt(self.wa_plus*self.wa_minus)
+        self.q = self.wo / (self.wp_plus - self.wp_minus)
+
+        self.wpn = 0    # inicializo en valores invalidos
+        self.wan = 0
+
     def normalize(self):
-        
+        self.wan = (self.wa_plus - self.wa_minus) / (self.wp_plus - self.wp_minus)
+        self.wpn = 1
         pass
 
     def denormalize_one_pole(self, pole):
@@ -108,8 +117,13 @@ class BandReject(filter.Filter):
         self.w0 = None  # ver esto
         self.q = None
 
+        self.wan = 0        #incializo en valores invalidos
+        self.wpn = 0
+
     def normalize(self):
-        pass
+        self.wpn = 1
+        self.wan = (self.wp_plus - self.wp_minus) / (self.wa_plus - self.wa_minus)
+
 
     def denormalize_one_pole(self, pole):
 
