@@ -60,12 +60,10 @@ class Filter(ABC):
     def denormalize_one_pole(self, pole):
         pass
 
-
     def calculate_poles(self):
         self.normalize()     # obtengo polos para la normalizada
         self.add_only_one_complex(self.poles)  # elimino uno de los dos complejos conjugados
         self.add_only_one_complex(self.zeros)
-
 
         self.denormalize()      #desnormalizo todos los polos
 

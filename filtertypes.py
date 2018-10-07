@@ -8,7 +8,8 @@ class LowPass(filter.Filter):
         self.wa = template[1]
 
     def normalize(self):
-        pass
+        self.wa = self.wa/self.wp
+        self.wp = 1
 
     def denormalize_one_pole(self,pole):
         # cambio de variable: s-> s/wp
@@ -36,6 +37,8 @@ class HighPass(filter.Filter):
         self.wa = template[1]
 
     def normalize(self):
+        self.wa = self.wp / self.wa
+        self.wp = 1
         pass
 
     def denormalize_one_pole(self, pole):
@@ -62,8 +65,12 @@ class BandPass(filter.Filter):
         filter.Filter.__init__(self, "bp", approx, alphaP, alphaA, n)
         self.w0 = template[0]
         self.q = template[1]
-
+        self.wa_plus = None
+        self.wa_minus = None
+        self.wp_plus = None
+        self.wp_minus = None
     def normalize(self):
+        
         pass
 
     def denormalize_one_pole(self, pole):
