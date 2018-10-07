@@ -7,13 +7,11 @@ from scipy import signal
 
 class Filter(ABC):
 
-    def __init__(self, filter_type, approx, template, alphaP, alphaA, n):
+    def __init__(self, filter_type, approx, alphaP, alphaA, n):
         super().__init__()
         self.type = filter_type
         self.approx = approx
         self.n = n # ver que onda cuando lo calculo yo vs cuando me lo imponen
-        self.wp = wp
-        self.wa = wa
         self.alphaP = alphaP
         self.alphaA = alphaA
         self.poles = []
