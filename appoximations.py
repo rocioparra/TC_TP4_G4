@@ -2,33 +2,36 @@ import math
 import cmath
 import numpy
 from interface import implements, Interface, default
+import numpy.polynomial.legendre as legpol
+from numpy.polynomial import Polynomial
+import numpy.polynomial.polynomial as poly
 
 
 class Approximation(Interface):
     @staticmethod
-    def get_min_n(wa_norm, alpha_a, alpha_p):
+    def get_min_n(template):
         pass
 
     @staticmethod
-    def pzk(n, alpha_p, wa_norm):
+    def pzk(n, template):
     # devuelve los polos y ceros con im()>0. como las funciones que definen son a coefs ctes reales, agregar el conjugado
         pass
 
     @default
     @staticmethod
-    def epsilon(alpha_p):
-        return math.sqrt(10**(alpha_p/10)-1)
+    def epsilon(alpha):
+        return math.sqrt(10**(alpha/10)-1)
 
 
 class Butterworth(implements(Approximation)):
     @staticmethod
-    def get_min_n(wa_norm, alpha_a, alpha_p):
-        epsilon = Butterworth.epsilon(alpha_p)
-        return math.ceil(math.log10(math.sqrt((10**(alpha_a/10)-1))/epsilon)/math.log10(wa_norm))
+    def get_min_n(template):
+        epsilon = Butterworth.epsilon(template.alpha_p)
+        return math.ceil(math.log10(math.sqrt((10**(template.alpha_a/10)-1))/epsilon)/math.log10(template.wa_norm))
 
     @staticmethod
-    def pzk(n, alpha_p, wa_norm):
-        epsilon = Butterworth.epsilon(alpha_p)
+    def pzk(n, template):
+        epsilon = Butterworth.epsilon(template.alpha_p)
         poles = []
         r = epsilon**(-1/n)
         delta_theta = math.pi/n
@@ -50,14 +53,14 @@ class Butterworth(implements(Approximation)):
 
 class Chebyshev(implements(Approximation)):
     @staticmethod
-    def get_min_n(wa_norm, alpha_a, alpha_p):
-        epsilon = Chebyshev.epsilon(alpha_p)
-        n = math.acosh(math.sqrt(10**(alpha_a/10))/epsilon)/math.acosh(wa_norm)
+    def get_min_n(template):
+        epsilon = Chebyshev.epsilon(template.alpha_p)
+        n = math.acosh(math.sqrt(10**(template.alpha_a/10))/epsilon)/math.acosh(template.wa_norm)
         return math.ceil(n)
 
     @staticmethod
-    def pzk(n, alpha_p, wa_norm):
-        epsilon = Chebyshev.epsilon(alpha_p)
+    def pzk(n, template):
+        epsilon = Chebyshev.epsilon(template.alpha_p)
         beta = -math.asinh(1 / epsilon) / n
         gain = 1
 
@@ -75,22 +78,22 @@ class Chebyshev(implements(Approximation)):
             poles.append(p)
             gain *= (-p)
         else:
-            gain *= 10 ** (-alpha_p / 20)
+            gain *= 10 ** (-template.alpha_p / 20)
         return [poles, [], gain]
 
 
 class InvChebyshev(implements(Approximation)):
     @staticmethod
-    def get_min_n(wa_norm, alpha_a, alpha_p):
-        return Chebyshev.get_min_n(wa_norm=wa_norm, alpha_a=alpha_a, alpha_p=alpha_p)
+    def get_min_n(template):
+        return Chebyshev.get_min_n(template)
 
     @staticmethod
-    def epsilon(alpha_p): ##ESTE RECIBE ALPHA_A, NO P. PERO TIENE QUE TENER EL MISMO NOMBRE LA VARIABLE
-        return 1/math.sqrt(10**(alpha_p/10)-1)
+    def epsilon(alpha):
+        return 1/math.sqrt(10**(alpha/10)-1)
 
     @staticmethod
-    def pzk(n, alpha_p, wa_norm): #PASARLE ALPHA_A, NO ALPHA_P
-        epsilon = InvChebyshev.epsilon(alpha_p)
+    def pzk(n, template):
+        epsilon = InvChebyshev.epsilon(template.alpha_a)
         beta = -math.asinh(1 / epsilon) / n
         gain = 1
         poles = []
@@ -100,16 +103,16 @@ class InvChebyshev(implements(Approximation)):
             alpha = (2 * k - 1) * math.pi / 2 / n
             re = math.sin(alpha) * math.sinh(beta)
             im = math.cos(alpha) * math.cosh(beta)
-            p = wa_norm/(re - 1j * im)
+            p = template.wa_norm/(re - 1j * im)
             poles.append(p)
             gain *= (numpy.absolute(p) ** 2)
 
-            z = 1j * wa_norm / math.cos(alpha)
+            z = 1j * template.wa_norm / math.cos(alpha)
             zeros.append(z)
             gain /= numpy.absolute(z)**2
 
         if n % 2 == 1:
-            p = wa_norm/math.sinh(beta)
+            p = template.wa_norm/math.sinh(beta)
             poles.append(p)
             gain *= (-p)
 
@@ -117,22 +120,102 @@ class InvChebyshev(implements(Approximation)):
 
 
 class Bessel(implements(Approximation)):
+    polynomials = []
+    # primeros dos polinomios de bessel. el resto los voy agregando a medida que los calculo
+
     @staticmethod
-    def get_min_n(wa_norm, alpha_a, alpha_p):
+    def get_min_n(template):
+        n = 1
+        while not Bessel.meets_template(template, n):
+            n = n+1
+        return n
+
+    @staticmethod
+    def meets_template(template, n):
+        b_n_f = poly.polyval(c=Bessel.get_poly(n).coef, x=1j*template.w_rg)
+        gd = 1/((b_n_f.imag/b_n_f.real)**2 + 1) # group delay: derivada de la tangente evaluada en wp
+        return gd >= 1 - template.tol
+
+    @staticmethod
+    def pzk(n, template):
+        b_n = Bessel.get_poly(n)
+        k = b_n.coef[0]
+        poles = []
+        roots = b_n.roots()
+        for i in range(len(roots)):
+            if roots[i].imag >= 0:
+                poles.append(roots[i])
+                k *= numpy.absolute(roots[i])**2
+
+        return poles, [], k
+
+    @staticmethod
+    def get_poly(n):
+        if n > len(Bessel.polynomials):
+            if n == 1:
+                Bessel.polynomials.append(Polynomial(coef=[1, 1]))
+            elif n == 2:
+                Bessel.polynomials.append(Polynomial(coef=[1, 3, 3]))
+            else:
+                b_n_2 = Bessel.get_poly(n-2)
+                b_n_1 = poly.polymul(Polynomial(coef=[0, 2*n-1]), Bessel.get_poly(n-1))
+                b_n = poly.polyadd(b_n_1, b_n_2)
+                Bessel.polynomials.append(b_n)
+        return Bessel.polynomials[n-1]
+
+
+class Legendre(implements(Approximation)):
+    polynomials = []  # Ln(s) que voy calculando. FALTA INTEGRAR porque eso depende de wn
+
+    @staticmethod
+    def get_min_n(template):
+        epsilon = Approximation.epsilon(template)
+        n = 1
+        while not Legendre.ok(epsilon, Legendre.get_poly(n)):
+            n = n+1
+
+
+
+    @staticmethod
+    def pzk(n, template):
         pass
 
     @staticmethod
-    def pzk(n, alpha_p, wa_norm):
+    def ok(epsilon, pol):
         pass
 
     @staticmethod
-    def get_coefficients(n):
-        if n == 1:
-            return [1, 1]
-        elif n == 2:
-            return [1, 3, 1]
+    def get_poly(n):
+        if n > len(Legendre.polynomials):
+            for i in range(len(Legendre.polynomials), n+1):
+                Legendre.calculate_nth_poly(i)
+        return Legendre.polynomials[n]
+
+    @staticmethod
+    def calculate_nth_poly(n):
+        k = (n - 1) // 2
+        new_pol = Polynomial(coef=[0])
+        leg_order = [1]  # para indicar que polinomio de legendre quiero
+
+        if n % 2 == 0:
+            for i in range(0, k + 1, 2):  # solo sumo los pares
+                a = (2 * i + 1) / math.sqrt((k + 1) * (k + 2))
+                leg_order[-1] = a  # pido que el polinomio este multiplicado por a
+                ith_pol = legpol.leg2poly(legpol.Legendre(leg_order))
+                new_pol = poly.polyadd(new_pol, ith_pol)
+                leg_order = [0] + leg_order  # la proxima iteracion pido un orden mas
+
+            new_pol = poly.polypow(new_pol, 2)
+            new_pol = poly.polymul(new_pol, Polynomial(coef=[1, 1]))
         else:
-            b_n_1 = (2*n-1) * Bessel.get_coeffients(n-1)
-            b_n_2 = numpy.convolve(Bessel.get_coeffients(n-2), [1, 0,0])
-            b_n_1 = numpy.pad(b_n_1, (len(b_n_2)-len(b_n_1), 0), 'constant', constant_values=0)
-            return b_n_1 + b_n_2
+            for i in range(0, k+1):
+                a = (2 * i + 1) / (math.sqrt(2)*(k + 1))
+                leg_order[-1] = a  # pido que el polinomio este multiplicado por a
+                ith_pol = legpol.leg2poly(legpol.Legendre(leg_order))
+                new_pol = poly.polyadd(new_pol, ith_pol)
+                leg_order = [0] + leg_order  # la proxima iteracion pido un orden mas
+
+            new_pol = poly.polypow(new_pol, 2)
+
+        Legendre.polynomials.append(new_pol.integ(lbnd=-1))
+
