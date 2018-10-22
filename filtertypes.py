@@ -1,6 +1,8 @@
 import filter
 import numpy as np
 import scipy
+from filter_template import GroupDelayTemplate
+
 class LowPass(filter.Filter):
     def __init__(self, approx, template, alphaP, alphaA, n):
         filter.Filter.__init__(self, "lp", approx, alphaP, alphaA, n)
@@ -160,3 +162,24 @@ class BandReject(filter.Filter):
             [denorm_zeroes, denorm_poles, gain_factor] = scipy.signal.tf2zpk([a, 0, c, 0, e], [f, g, h, i, j])
 
         return [denorm_poles, denorm_zeroes, gain_factor]
+
+
+class GroupDelay(filter.Filter):
+    # params = [w_rg, tau, tolerance]
+    def __init__(self, params, n, approx):
+        filter.Filter.__init__(self, filter_type="gd", approx=approx, alphaP=0, alphaA=0, n=n)
+        self.w_rg = params[0]
+        self.tau = params[1]
+        self.tolerance = params[2]
+        self.template = GroupDelayTemplate(w_rg=self.w_rg, tau=self.tau, tolerance=self.tolerance) # aca?
+        self.norm_poles = []  # esto iria en filter
+        self.norm_zeros = []  # en template
+        self.norm_k = 1       # en template
+        self.norm_template = self.template #place holder! tambien en filter
+
+    def normalize(self):
+        self.norm_template = GroupDelayTemplate(w_rg=self.w_rg * self.tau, tau=1, tolerance=self.tolerance)
+
+    def denormalize_one_pole(self, pole):
+        self.k /= self.tau
+        self.poles.append(pole/self.tau)
