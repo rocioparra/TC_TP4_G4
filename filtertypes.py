@@ -13,7 +13,7 @@ class LowPass(filter.Filter):
         self.wan = self.wa/self.wp
         self.wpn = 1
 
-    def denormalize_one_pole(self,pole):
+    def denormalize_one_pole(self, pole):
         # cambio de variable: s-> s/wp
 
         # 1/(s-p) -> (wp) *s/(s - wp*p)
