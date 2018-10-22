@@ -75,7 +75,7 @@ class Chebyshev(implements(Approximation)):
     @staticmethod
     def get_min_n(template):
         epsilon = Chebyshev.epsilon(template.alpha_p)
-        n = math.acosh(math.sqrt(10**(template.alpha_a/10))/epsilon)/math.acosh(template.wa_norm)
+        n = math.acosh(math.sqrt(10**(template.alpha_a/10))/epsilon)/math.acosh(template.wa)
         return math.ceil(n)
 
     @staticmethod
@@ -123,11 +123,11 @@ class InvChebyshev(implements(Approximation)):
             alpha = (2 * k - 1) * math.pi / 2 / n
             re = math.sin(alpha) * math.sinh(beta)
             im = math.cos(alpha) * math.cosh(beta)
-            p = template.wa_norm/(re - 1j * im)
+            p = template.wa/(re - 1j * im)
             poles.append(p)
             gain *= (numpy.absolute(p) ** 2)
 
-            z = 1j * template.wa_norm / math.cos(alpha)
+            z = 1j * template.wa / math.cos(alpha)
             zeros.append(z)
             gain /= numpy.absolute(z)**2
 

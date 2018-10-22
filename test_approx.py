@@ -3,7 +3,7 @@ from scipy import signal
 import matplotlib.pyplot as plt
 import math
 import numpy
-from filter_template import GroupDelayTemplate
+from filter_template import GroupDelayTemplate, LowPassTemplate
 from filtertypes import GroupDelay
 from numpy.polynomial import Polynomial
 import numpy.polynomial.polynomial as poly
@@ -56,27 +56,22 @@ from group_delay import group_delay
 tau = 10e-3
 w_rg = 1000
 tolerance = 0.20
-filter = GroupDelay(params=[w_rg, tau, tolerance], n=0, approx="be")
-approx = approximation_factory("be")
-n = approx.get_min_n(filter.norm_template)
-filter.normalize()
-filter.norm_poles, filter.norm_zeros, filter.k = approx.pzk(n, filter.norm_template)
+filter = LowPassTemplate(wp=1, wa=10, alpha_p=5, alpha_a=80)
+approx = InvChebyshev()
+n = approx.get_min_n(filter)
 
-for pole in filter.norm_poles:
-    filter.denormalize_one_pole(pole)
+ppos, zpos, k = approx.pzk(n, filter)
 
 p = []
-ppos = filter.poles
+z = []
 for pole in ppos:
     p.append(pole)
     if pole.imag > 0:
         p.append(numpy.conj(pole))
-
-z = filter.zeros
-k = filter.k
-
-#t0 = 1
-k /= tau ** n
+for zero in zpos:
+    z.append(zero)
+    if zero.imag > 0:
+        z.append(numpy.conj(zero))
 
 sys = signal.ZerosPolesGain(z, p, k)
 Hmia = sys.to_tf()
