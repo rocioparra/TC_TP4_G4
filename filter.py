@@ -80,7 +80,7 @@ class Filter(ABC):
         self.denormalized_k = self.normalized_k
         self.denormalized_poles = []    #vacio las listas por las dudas
         self.denormalized_zeros = []
-
+        
         for p in self.normalized_poles:
             [denorm_poles, denorm_zeroes, gain_factor] = self.denormalize_one_pole(p)
             self.denormalized_poles.append(denorm_poles)
@@ -131,7 +131,7 @@ class Filter(ABC):
 
         approximation = approximation_factory(self.approx)
         n = approximation.get_min_n(self.normalized_template)
-        [self.normalized_poles, self.normalized_zeros, self.normalized_k] = approximation.pzk(n)
+        [self.normalized_poles, self.normalized_zeros, self.normalized_k] = approximation.pzk(n, self.normalized_template)
         self.denormalize()      # desnormalizo todos los polos
 
         #antes de graficar, si necesito todos los polos:

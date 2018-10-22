@@ -8,26 +8,27 @@ from filter_template import LowPassTemplate
 
 def filter_factory(filter_type, param):
     if filter_type == "lp":
-        return LowPass(param(0), param(1), param(2), param(3), param(4), param(5))
+        return LowPass(param(0), param(1), param(2), param(3), param(4), param(5), param(6))
     elif filter_type == "hp":
-        return HighPass(param(0), param(1), param(2), param(3), param(4), param(5))
+        return HighPass(param(0), param(1), param(2), param(3), param(4), param(5), param(6))
     elif filter_type == "bp":
-        return BandPass(param(0), param(1), param(2), param(3), param(4), param(5), param(6), param(7))
+        return BandPass(param(0), param(1), param(2), param(3), param(4), param(5), param(6), param(7), param(8))
     elif filter_type == "br":
-        return BandReject(param(0), param(1), param(2), param(3), param(4), param(5))
+        return BandReject(param(0), param(1), param(2), param(3), param(4), param(5), param(6))
     elif filter_type == 'gd':
-        return GroupDelay(param(0), param(1), param(2), param(3), param(4))
+        return GroupDelay(param(0), param(1), param(2), param(3), param(4), param(5))
     else:
         pass
 
 
 class LowPass(Filter):
-    def __init__(self, approx, wp, wa, alpha_a, alpha_p, n):
+    def __init__(self, approx, wp, wa, alpha_a, alpha_p, n, denorm_degree):
         Filter.__init__(self, "lp", approx, n)
         self.alpha_a = alpha_a
         self.alpha_p = alpha_p
         self.wp = wp
         self.wa = wa
+        self.denorm_degree = denorm_degree
 
     @staticmethod
     def get_available_approximations():
@@ -60,12 +61,13 @@ class LowPass(Filter):
 
 
 class HighPass(Filter):
-    def __init__(self, approx, wa, wp, alpha_a, alpha_p, n):
+    def __init__(self, approx, wa, wp, alpha_a, alpha_p, n, denorm_degree):
         Filter.__init__(self, "hp", approx, n)
         self.alpha_a = alpha_a
         self.alpha_p = alpha_p
         self.wp = wp
         self.wa = wa
+        self.denorm_degree = denorm_degree
 
     @staticmethod
     def get_available_approximations():
@@ -101,7 +103,7 @@ class HighPass(Filter):
 
 
 class BandPass(Filter):
-    def __init__(self, approx, wa_minus, wp_minus, wa_plus, wp_plus, alpha_p, alpha_a, n):
+    def __init__(self, approx, wa_minus, wp_minus, wa_plus, wp_plus, alpha_p, alpha_a, n, denorm_degree):
         Filter.__init__(self, "bp", approx, n)
         self.alpha_a = alpha_a
         self.alpha_p = alpha_p
@@ -111,6 +113,7 @@ class BandPass(Filter):
         self.wp_plus = wp_plus
         self.wo = np.sqrt(self.wa_plus*self.wa_minus)
         self.q = self.wo / (self.wp_plus - self.wp_minus)
+        self.denorm_degree = denorm_degree
 
     @staticmethod
     def get_available_approximations():
@@ -152,12 +155,14 @@ class BandPass(Filter):
 
 
 class BandReject(Filter):
-    def __init__(self, approx, w0, q, alpha_a, alpha_p, n):
+    def __init__(self, approx, w0, q, alpha_a, alpha_p, n, denorm_degree):
         Filter.__init__(self, "br", approx, n)
         self.alpha_a = alpha_a
         self.alpha_p = alpha_p
         self.w0 = w0
         self.q = q
+        self.denorm_degree = denorm_degree
+
 
     @staticmethod
     def get_available_approximations():
@@ -209,11 +214,12 @@ class BandReject(Filter):
 
 class GroupDelay(Filter):
     # params = [w_rg, tau, tolerance]
-    def __init__(self, approx, w_rg, tau, tolerance, n):
+    def __init__(self, approx, w_rg, tau, tolerance, n, denorm_degree):
         Filter.__init__(self, filter_type="gd", approx=approx, alphaP=0, alphaA=0, n=n)
         self.w_rg = w_rg
         self.tau = tau
         self.tolerance = tolerance
+        self.denorm_degree = denorm_degree
 
     @staticmethod
     def get_available_approximations():
