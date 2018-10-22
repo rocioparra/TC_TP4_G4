@@ -3,28 +3,31 @@ import numpy as np
 import scipy
 import appoximations
 from filter_template import GroupDelayTemplate
+from filter_template import LowPassTemplate
 
 
 def filter_factory(filter_type, param):
     if filter_type == "lp":
-        return LowPass(param(0), param(1),param(2), param(3), param(4))
+        return LowPass(param(0), param(1), param(2), param(3), param(4), param(5))
     elif filter_type == "hp":
-        return HighPass(param(0), param(1),param(2), param(3), param(4))
+        return HighPass(param(0), param(1), param(2), param(3), param(4), param(5))
     elif filter_type == "bp":
-        return InvChebyshev(template)
+        return BandPass(param(0), param(1), param(2), param(3), param(4), param(5), param(6), param(7))
     elif filter_type == "br":
-        return Bessel(template)
+        return BandReject(param(0), param(1), param(2), param(3), param(4), param(5))
+    elif filter_type == 'gd':
+        return GroupDelay(param(0), param(1), param(2), param(3), param(4))
     else:
         pass
 
 
 class LowPass(Filter):
-    def __init__(self, approx, template, alphaP, alphaA, n):
-        Filter.__init__(self, "lp", approx, alphaP, alphaA, n)
-        self.wp = template[0]
-        self.wa = template[1]
-        self.wan = 0        #los inicializo en valores invalidos
-        self.wpn = 0
+    def __init__(self, approx, wp, wa, alpha_a, alpha_p, n):
+        Filter.__init__(self, "lp", approx, n)
+        self.alpha_a = alpha_a
+        self.alpha_p = alpha_p
+        self.wp = wp
+        self.wa = wa
 
     @staticmethod
     def get_available_approximations():
@@ -35,8 +38,7 @@ class LowPass(Filter):
         return ["wp", "wa", "alpha p", "alpha a"]
 
     def normalize(self):
-        self.wan = self.wa/self.wp
-        self.wpn = 1
+        self.normalized_template = LowPassTemplate(wp=1, wa=self.wa/self.wp, alpha_a=self.alpha_a, alpha_p=self.alpha_p)
 
     def denormalize_one_pole(self, pole):
         # cambio de variable: s-> s/wp
@@ -58,12 +60,12 @@ class LowPass(Filter):
 
 
 class HighPass(Filter):
-    def __init__(self, approx, template, alphaP, alphaA, n):
-        Filter.__init__(self, "hp", approx, alphaP, alphaA, n)
-        self.wp = template[0]
-        self.wa = template[1]
-        self.wan = 0        #los inicializo en valores invalidos
-        self.wpn = 0
+    def __init__(self, approx, wa, wp, alpha_a, alpha_p, n):
+        Filter.__init__(self, "hp", approx, n)
+        self.alpha_a = alpha_a
+        self.alpha_p = alpha_p
+        self.wp = wp
+        self.wa = wa
 
     @staticmethod
     def get_available_approximations():
@@ -74,9 +76,7 @@ class HighPass(Filter):
         return ["wp", "wa", "alpha p", "alpha a"]
 
     def normalize(self):
-        self.wan = self.wp / self.wa
-        self.wpn = 1
-        pass
+        self.normalized_template = LowPassTemplate(wp=1, wa=self.wp / self.wa, alpha_p=self.alpha_p, alpha_a=self.alpha_a)
 
     def denormalize_one_pole(self, pole):
         # cambio de variable: s-> wp/s
@@ -101,17 +101,16 @@ class HighPass(Filter):
 
 
 class BandPass(Filter):
-    def __init__(self, approx, template, alphaP, alphaA, n):
-        Filter.__init__(self, "bp", approx, alphaP, alphaA, n)
-        self.wa_minus = template[0]
-        self.wp_minus = template[1]
-        self.wa_plus = template[2]
-        self.wp_plus = template[3]
+    def __init__(self, approx, wa_minus, wp_minus, wa_plus, wp_plus, alpha_p, alpha_a, n):
+        Filter.__init__(self, "bp", approx, n)
+        self.alpha_a = alpha_a
+        self.alpha_p = alpha_p
+        self.wa_minus = wa_minus
+        self.wp_minus = wp_minus
+        self.wa_plus = wa_plus
+        self.wp_plus = wp_plus
         self.wo = np.sqrt(self.wa_plus*self.wa_minus)
         self.q = self.wo / (self.wp_plus - self.wp_minus)
-
-        self.wpn = 0    # inicializo en valores invalidos
-        self.wan = 0
 
     @staticmethod
     def get_available_approximations():
@@ -122,9 +121,7 @@ class BandPass(Filter):
         return ["w0", "Q", "alpha p", "alpha a"]
 
     def normalize(self):
-        self.wan = (self.wa_plus - self.wa_minus) / (self.wp_plus - self.wp_minus)
-        self.wpn = 1
-        pass
+        self.normalized_template = LowPassTemplate(wp=1, wa=(self.wa_plus - self.wa_minus) / (self.wp_plus - self.wp_minus), alpha_a=self.alpha_a, alpha_p=self.alpha_p)
 
     def denormalize_one_pole(self, pole):
         # cambio de variable: s -> q*(s/wo+wo/s) = q*(s^2+wo^2)/(s*wo)
@@ -155,13 +152,12 @@ class BandPass(Filter):
 
 
 class BandReject(Filter):
-    def __init__(self, approx, template, alphaP, alphaA, n):
-        Filter.__init__(self, "br", approx, alphaP, alphaA, n)
-        self.w0 = None  # ver esto
-        self.q = None
-
-        self.wan = 0        #incializo en valores invalidos
-        self.wpn = 0
+    def __init__(self, approx, w0, q, alpha_a, alpha_p, n):
+        Filter.__init__(self, "br", approx, n)
+        self.alpha_a = alpha_a
+        self.alpha_p = alpha_p
+        self.w0 = w0
+        self.q = q
 
     @staticmethod
     def get_available_approximations():
@@ -172,9 +168,7 @@ class BandReject(Filter):
         return ["w0", "Q", "alpha p", "alpha a"]
 
     def normalize(self):
-        self.wpn = 1
-        self.wan = (self.wp_plus - self.wp_minus) / (self.wa_plus - self.wa_minus)
-
+        self.normalized_template = LowPassTemplate(wp=1, wa=(self.wp_plus - self.wp_minus) / (self.wa_plus - self.wa_minus),alpha_p=self.alpha_p, alpha_a=self.alpha_a)
 
     def denormalize_one_pole(self, pole):
 
@@ -215,13 +209,11 @@ class BandReject(Filter):
 
 class GroupDelay(Filter):
     # params = [w_rg, tau, tolerance]
-    def __init__(self, params, n, approx):
+    def __init__(self, approx, w_rg, tau, tolerance, n):
         Filter.__init__(self, filter_type="gd", approx=approx, alphaP=0, alphaA=0, n=n)
-        self.w_rg = params[0]
-        self.tau = params[1]
-        self.tolerance = params[2]
-        self.template = GroupDelayTemplate(w_rg=self.w_rg, tau=self.tau, tolerance=self.tolerance) # aca?
-        self.norm_template = self.template  #place holder! tambien en filter
+        self.w_rg = w_rg
+        self.tau = tau
+        self.tolerance = tolerance
 
     @staticmethod
     def get_available_approximations():

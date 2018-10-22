@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import filtertypes
 
 
+
 class Filter(ABC):
     filter_dict = {
         "Low-pass": filtertypes.LowPass,
@@ -20,7 +21,7 @@ class Filter(ABC):
         "Group delay": filtertypes.GroupDelay
     }
 
-    def __init__(self, filter_type, approx, alphaP, alphaA, n):
+    def __init__(self, filter_type, approx, n):
         super().__init__()
         self.type = filter_type
         self.approx = approx
@@ -31,7 +32,7 @@ class Filter(ABC):
         self.denormalized_zeros = []
         self.normalized_k = None
         self.denormalized_k = None
-        self.norm_template = None
+        self.normalized_template = None
         self.denormalized_template = None
 
 
@@ -64,17 +65,34 @@ class Filter(ABC):
     def normalize(self):
         pass
 
-    #me deja en self poles y en self.zeroes todos los ceros y polos resultantes de desnormalizar
+    # --------------------------
+    # denormalize
+    # -------------------------
+    # desnormalize denormaliza todos los polos y ceros de la lista de polos y ceros normalizados
+    # cambia denormalized_poles y denormalized_zeros, actualizandolos con los nuevos valores.
+
+    # INPUT:
+            #no input
+    # OUTPUT:
+            #void
+
     def denormalize(self):
-        self.k = 1
+        self.denormalized_k = self.normalized_k
         self.denormalized_poles = []    #vacio las listas por las dudas
         self.denormalized_zeros = []
 
-        for p in self.poles:
+        for p in self.normalized_poles:
             [denorm_poles, denorm_zeroes, gain_factor] = self.denormalize_one_pole(p)
             self.denormalized_poles.append(denorm_poles)
             self.denormalized_zeros.append(denorm_zeroes)
-            self.normalized_k = self.k * gain_factor
+            self.denormalized_k = self.denormalized_k * gain_factor
+
+        for z in self.normalized_zeros:
+            # ESTA AL REVES A PROPOSITO!!! LOS CEROS TIENEN CONVERSION INVERSA A LOS POLOS!!
+            [denorm_zeroes, denorm_poles, gain_factor] = self.denormalized_one_pole(z)
+            self.denormalized_poles.append(denorm_poles)
+            self.denormalized_zeros.append(denorm_zeroes)
+            self.denormalized_k = self.denormalized_k * (1/gain_factor)
 
         self.denormalized_poles = self.add_only_one_complex(self.denormalized_poles)
         self.denormalized_zeros = self.add_only_one_complex(self.denormalized_zeros)
@@ -99,20 +117,28 @@ class Filter(ABC):
     def denormalize_one_pole(self, pole):
         pass
 
+    # --------------------------
+    # calculate_poles
+    # -------------------------
+    # calculate_poles
+
+    # INPUT:
+        # no input
+    # OUTPUT:
+        # void
     def calculate_poles(self):
-        norm_template = self.normalize()
+        self.normalize()
 
         approximation = approximation_factory(self.approx)
-        n = approximation.get_min_n()
+        n = approximation.get_min_n(self.normalized_template)
         [self.normalized_poles, self.normalized_zeros, self.normalized_k] = approximation.pzk(n)
-        norm_template = self.denormalize()      # desnormalizo todos los polos
-
+        self.denormalize()      # desnormalizo todos los polos
 
         #antes de graficar, si necesito todos los polos:
         self.re_add_complex(self.denormalized_zeros)
         self.re_add_complex(self.denormalized_poles)
 
-        sys = signal.ZerosPolesGain(self.zeros, self.poles, self.k)
+        sys = signal.ZerosPolesGain(self.denormalized_zeros, self.denormalized_poles, self.denormalized_k)
         hmia = sys.to_tf()
         [w, mag, pha] = signal.bode(hmia)
         plt.semilogx(w, -mag)

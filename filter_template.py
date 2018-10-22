@@ -24,4 +24,10 @@ class GroupDelayTemplate(FilterTemplate):
         self.tau = tau
 
 
-
+def template_factory(filter_type):
+    if filter_type == "lp" or filter_type == "hp" or filter_type == "bp" or filter_type == "br":
+        return LowPassTemplate()
+    elif filter_type == 'gd':
+        return GroupDelayTemplate()
+    else:
+        pass
