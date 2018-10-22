@@ -1,6 +1,7 @@
 from filter import Filter
 import numpy as np
 import scipy
+import appoximations
 from filter_template import GroupDelayTemplate
 
 
@@ -17,8 +18,6 @@ def filter_factory(filter_type, param):
         pass
 
 
-pass
-
 class LowPass(Filter):
     def __init__(self, approx, template, alphaP, alphaA, n):
         Filter.__init__(self, "lp", approx, alphaP, alphaA, n)
@@ -26,6 +25,14 @@ class LowPass(Filter):
         self.wa = template[1]
         self.wan = 0        #los inicializo en valores invalidos
         self.wpn = 0
+
+    @staticmethod
+    def get_available_approximations():
+        return appoximations.get_attenuation_approximations()
+
+    @staticmethod
+    def get_parameter_list():
+        return ["wp", "wa", "alpha p", "alpha a"]
 
     def normalize(self):
         self.wan = self.wa/self.wp
@@ -58,6 +65,14 @@ class HighPass(Filter):
         self.wan = 0        #los inicializo en valores invalidos
         self.wpn = 0
 
+    @staticmethod
+    def get_available_approximations():
+        return appoximations.get_attenuation_approximations()
+
+    @staticmethod
+    def get_parameter_list():
+        return ["wp", "wa", "alpha p", "alpha a"]
+
     def normalize(self):
         self.wan = self.wp / self.wa
         self.wpn = 1
@@ -84,6 +99,7 @@ class HighPass(Filter):
 
         return [denorm_poles, denorm_zeroes, gain_factor]
 
+
 class BandPass(Filter):
     def __init__(self, approx, template, alphaP, alphaA, n):
         Filter.__init__(self, "bp", approx, alphaP, alphaA, n)
@@ -96,6 +112,14 @@ class BandPass(Filter):
 
         self.wpn = 0    # inicializo en valores invalidos
         self.wan = 0
+
+    @staticmethod
+    def get_available_approximations():
+        return appoximations.get_attenuation_approximations()
+
+    @staticmethod
+    def get_parameter_list():
+        return ["w0", "Q", "alpha p", "alpha a"]
 
     def normalize(self):
         self.wan = (self.wa_plus - self.wa_minus) / (self.wp_plus - self.wp_minus)
@@ -138,6 +162,14 @@ class BandReject(Filter):
 
         self.wan = 0        #incializo en valores invalidos
         self.wpn = 0
+
+    @staticmethod
+    def get_available_approximations():
+        return appoximations.get_attenuation_approximations()
+
+    @staticmethod
+    def get_parameter_list():
+        return ["w0", "Q", "alpha p", "alpha a"]
 
     def normalize(self):
         self.wpn = 1
@@ -190,6 +222,14 @@ class GroupDelay(Filter):
         self.tolerance = params[2]
         self.template = GroupDelayTemplate(w_rg=self.w_rg, tau=self.tau, tolerance=self.tolerance) # aca?
         self.norm_template = self.template  #place holder! tambien en filter
+
+    @staticmethod
+    def get_available_approximations():
+        return appoximations.get_group_delay_approximations()
+
+    @staticmethod
+    def get_parameter_list():
+        return ["w rg", "tau", "alpha p", "alpha a"]
 
     def normalize(self):
         self.norm_template = GroupDelayTemplate(w_rg=self.w_rg * self.tau, tau=1, tolerance=self.tolerance)

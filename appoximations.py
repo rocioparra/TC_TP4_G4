@@ -8,42 +8,50 @@ import numpy.polynomial.polynomial as poly
 from group_delay import group_delay
 
 
-def approximation_factory(s, template):
+def get_attenuation_approximations():
+    return ["Butterworth", "Chebyshev", "Inverse Chebyshev"]
 
-        if s == "bw":
-            return Butterworth(template)
-        elif s == "c1":
-            return Chebyshev(template)
-        elif s == "c2":
-            return InvChebyshev(template)
-        elif s == "be":
-            return Bessel(template)
-        else:
-            pass
+
+def get_group_delay_approximations():
+    return ["Bessel"]
+
+
+def approximation_factory(s):
+    switcher = {
+        "Bessel":               Bessel,
+        "Butterworth":          Butterworth,
+        "Chebyshev":            Chebyshev,
+        "Inverse Chebyshev":    InvChebyshev
+    }
+
+    return switcher.get(s)
 
 
 class Approximation(Interface):
-
-    def get_min_n(self):
+    @staticmethod
+    def get_min_n(template):
         pass
 
-    def pzk(self, n):
+    @staticmethod
+    def pzk(n, template):
     # devuelve los polos y ceros con im()>0. como las funciones que definen son a coefs ctes reales, agregar el conjugado
         pass
 
     @default
-    def epsilon(self, alpha):
+    @staticmethod
+    def epsilon(alpha):
         return math.sqrt(10**(alpha/10)-1)
 
 
 class Butterworth(implements(Approximation)):
+    @staticmethod
+    def get_min_n(template):
+        epsilon = Butterworth.epsilon(template.alpha_p)
+        return math.ceil(math.log10(math.sqrt((10**(template.alpha_a/10)-1))/epsilon)/math.log10(template.wa_norm))
 
-    def get_min_n(self):
-        epsilon = Butterworth.epsilon(self.template.alpha_p)
-        return math.ceil(math.log10(math.sqrt((10**(self.template.alpha_a/10)-1))/epsilon)/math.log10(self.template.wa_norm))
-
-    def pzk(self, n):
-        epsilon = Butterworth.epsilon(self.template.alpha_p)
+    @staticmethod
+    def pzk(n, template):
+        epsilon = Butterworth.epsilon(template.alpha_p)
         poles = []
         r = epsilon**(-1/n)
         delta_theta = math.pi/n
@@ -64,14 +72,15 @@ class Butterworth(implements(Approximation)):
 
 
 class Chebyshev(implements(Approximation)):
-
-    def get_min_n(self):
-        epsilon = Chebyshev.epsilon(self.template.alpha_p)
-        n = math.acosh(math.sqrt(10**(self.template.alpha_a/10))/epsilon)/math.acosh(self.template.wa_norm)
+    @staticmethod
+    def get_min_n(template):
+        epsilon = Chebyshev.epsilon(template.alpha_p)
+        n = math.acosh(math.sqrt(10**(template.alpha_a/10))/epsilon)/math.acosh(template.wa_norm)
         return math.ceil(n)
 
-    def pzk(self, n):
-        epsilon = Chebyshev.epsilon(self.template.alpha_p)
+    @staticmethod
+    def pzk(n, template):
+        epsilon = Chebyshev.epsilon(template.alpha_p)
         beta = -math.asinh(1 / epsilon) / n
         gain = 1
 
@@ -89,20 +98,22 @@ class Chebyshev(implements(Approximation)):
             poles.append(p)
             gain *= (-p)
         else:
-            gain *= 10 ** (-self.template.alpha_p / 20)
+            gain *= 10 ** (-template.alpha_p / 20)
         return [poles, [], gain]
 
 
 class InvChebyshev(implements(Approximation)):
+    @staticmethod
+    def get_min_n(template):
+        return Chebyshev.get_min_n(template)
 
-    def get_min_n(self):
-        return Chebyshev.get_min_n(self.template)
+    @staticmethod
+    def epsilon(alpha):
+        return 1/math.sqrt(10**(alpha/10)-1)
 
-    def epsilon(self):
-        return 1/math.sqrt(10**(self.alpha/10)-1)
-
-    def pzk(self, n):
-        epsilon = InvChebyshev.epsilon(self.template.alpha_a)
+    @staticmethod
+    def pzk(n, template):
+        epsilon = InvChebyshev.epsilon(template.alpha_a)
         beta = -math.asinh(1 / epsilon) / n
         gain = 1
         poles = []
@@ -112,16 +123,16 @@ class InvChebyshev(implements(Approximation)):
             alpha = (2 * k - 1) * math.pi / 2 / n
             re = math.sin(alpha) * math.sinh(beta)
             im = math.cos(alpha) * math.cosh(beta)
-            p = self.template.wa_norm/(re - 1j * im)
+            p = template.wa_norm/(re - 1j * im)
             poles.append(p)
             gain *= (numpy.absolute(p) ** 2)
 
-            z = 1j * self.template.wa_norm / math.cos(alpha)
+            z = 1j * template.wa_norm / math.cos(alpha)
             zeros.append(z)
             gain /= numpy.absolute(z)**2
 
         if n % 2 == 1:
-            p = self.template.wa_norm/math.sinh(beta)
+            p = template.wa_norm/math.sinh(beta)
             poles.append(p)
             gain *= (-p)
 
@@ -132,23 +143,26 @@ class Bessel(implements(Approximation)):
     polynomials = []
     # primeros dos polinomios de bessel. el resto los voy agregando a medida que los calculo
 
-    def get_min_n(self):
+    @staticmethod
+    def get_min_n(template):
         n = 1
-        while not (Bessel.meets_template(self.template, n)):
+        while not (Bessel.meets_template(template, n)):
             n += 1
 
         return n
 
-    def meets_template(self, n):
+    @staticmethod
+    def meets_template(template, n):
         b = Bessel.get_poly(n)
         poles = poly.polyroots(c=b.coef)
-        gd = group_delay(w=[self.template.w_rg], p=poles, z=[])
-        if gd[0] >= 1-self.template.tol:
+        gd = group_delay(w=[template.w_rg], p=poles, z=[])
+        if gd[0] >= 1-template.tol:
             return True
         else:
             return False
 
-    def pzk(self, n):
+    @staticmethod
+    def pzk(n, template):
         b_n = Bessel.get_poly(n)
         k = 1
         poles = []
@@ -164,7 +178,7 @@ class Bessel(implements(Approximation)):
         return poles, [], k
 
     @staticmethod
-    def get_poly(self, n):
+    def get_poly(n):
         if n > len(Bessel.polynomials):
             if n == 1:
                 Bessel.polynomials.append(Polynomial(coef=[1, 1]))
@@ -182,15 +196,17 @@ class Bessel(implements(Approximation)):
 class Legendre(implements(Approximation)):
     polynomials = []  # Ln(s) que voy calculando. FALTA INTEGRAR porque eso depende de wn
 
-    def get_min_n(self):
-        epsilon = Approximation.epsilon(self.template)
+    @staticmethod
+    def get_min_n(template):
+        epsilon = Approximation.epsilon(template)
         n = 1
         while not Legendre.ok(epsilon, Legendre.get_poly(n)):
             n = n+1
 
 
 
-    def pzk(self, n):
+    @staticmethod
+    def pzk(n, template):
         pass
 
     @staticmethod
@@ -231,4 +247,3 @@ class Legendre(implements(Approximation)):
             new_pol = poly.polypow(new_pol, 2)
 
         Legendre.polynomials.append(new_pol.integ(lbnd=-1))
-

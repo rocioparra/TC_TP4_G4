@@ -8,26 +8,57 @@ from filter_template import LowPassTemplate
 from filter_template import GroupDelayTemplate
 from appoximations import approximation_factory
 import matplotlib.pyplot as plt
+import filtertypes
 
 
 class Filter(ABC):
+    filter_dict = {
+        "Low-pass": filtertypes.LowPass,
+        "High-pass": filtertypes.HighPass,
+        "Band-pass": filtertypes.BandPass,
+        "Band-reject": filtertypes.BandReject,
+        "Group delay": filtertypes.GroupDelay
+    }
 
     def __init__(self, filter_type, approx, alphaP, alphaA, n):
         super().__init__()
         self.type = filter_type
         self.approx = approx
         self.n = n  # # ver que onda cuando lo calculo yo vs cuando me lo imponen
-        self.alphaP = alphaP
-        self.alphaA = alphaA
         self.normalized_poles = []
         self.denormalized_poles = []
         self.normalized_zeros = []
         self.denormalized_zeros = []
         self.normalized_k = None
         self.denormalized_k = None
+        self.norm_template = None
+        self.denormalized_template = None
+
 
 # porcentaje de normalizacion ahre
 # etapas
+
+    @staticmethod
+    def get_available_filters():
+        return list(Filter.filter_dict.keys())
+
+    @staticmethod
+    def get_parameters_for(filter_str):
+        return (Filter.filter_dict.get(filter_str)).get_parameter_list()
+
+    @staticmethod
+    def get_approximations_for(filter_str):
+        return (Filter.filter_dict.get(filter_str)).get_available_approximations()
+
+    @staticmethod
+    @abstractmethod
+    def get_available_approximations():
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def get_parameter_list():
+        pass
 
     @abstractmethod
     def normalize(self):
@@ -70,7 +101,8 @@ class Filter(ABC):
 
     def calculate_poles(self):
         norm_template = self.normalize()
-        approximation = approximation_factory(self.approx, norm_template)
+
+        approximation = approximation_factory(self.approx)
         n = approximation.get_min_n()
         [self.normalized_poles, self.normalized_zeros, self.normalized_k] = approximation.pzk(n)
         norm_template = self.denormalize()      # desnormalizo todos los polos

@@ -17,7 +17,7 @@ class ContinuousPlotData(PlotData):
 class ScatterPlotData(PlotData):
     def __init__(self, title, x_label, y_label, points):
         super().__init__('s', title, x_label, y_label)
-        self.points = points
+        self.points = points  # x, y, format
 
 
 class TemplatePlotData(PlotData):
