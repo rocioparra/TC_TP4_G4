@@ -189,14 +189,11 @@ class GroupDelay(Filter):
         self.tau = params[1]
         self.tolerance = params[2]
         self.template = GroupDelayTemplate(w_rg=self.w_rg, tau=self.tau, tolerance=self.tolerance) # aca?
-        self.norm_poles = []  # esto iria en filter
-        self.norm_zeros = []  # en template
-        self.norm_k = 1       # en template
-        self.norm_template = self.template #place holder! tambien en filter
+        self.norm_template = self.template  #place holder! tambien en filter
 
     def normalize(self):
         self.norm_template = GroupDelayTemplate(w_rg=self.w_rg * self.tau, tau=1, tolerance=self.tolerance)
 
     def denormalize_one_pole(self, pole):
-        self.k /= self.tau
-        self.poles.append(pole/self.tau)
+        self.denormalized_k /= self.tau
+        self.denormalized_poles.append(pole/self.tau)
