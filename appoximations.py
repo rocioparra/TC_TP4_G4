@@ -5,7 +5,7 @@ from interface import implements, Interface, default
 import numpy.polynomial.legendre as legpol
 from numpy.polynomial import Polynomial
 import numpy.polynomial.polynomial as poly
-
+from group_delay import group_delay
 
 class Approximation(Interface):
     @staticmethod
@@ -126,26 +126,35 @@ class Bessel(implements(Approximation)):
     @staticmethod
     def get_min_n(template):
         n = 1
-        while not Bessel.meets_template(template, n):
-            n = n+1
+        while not (Bessel.meets_template(template, n)):
+            n += 1
+
         return n
 
     @staticmethod
     def meets_template(template, n):
-        b_n_f = poly.polyval(c=Bessel.get_poly(n).coef, x=1j*template.w_rg)
-        gd = 1/((b_n_f.imag/b_n_f.real)**2 + 1) # group delay: derivada de la tangente evaluada en wp
-        return gd >= 1 - template.tol
+        b = Bessel.get_poly(n)
+        poles = poly.polyroots(c=b.coef)
+        gd = group_delay(w=[template.w_rg], p=poles, z=[])
+        if gd[0] >= 1-template.tol:
+            return True
+        else:
+            return False
 
     @staticmethod
     def pzk(n, template):
         b_n = Bessel.get_poly(n)
-        k = b_n.coef[0]
+        k = 1
         poles = []
         roots = b_n.roots()
         for i in range(len(roots)):
-            if roots[i].imag >= 0:
+            #roots[i] *= template.w_rg ** 2
+            if roots[i].imag > 0:
                 poles.append(roots[i])
                 k *= numpy.absolute(roots[i])**2
+            elif roots[i].imag == 0:
+                k *= numpy.absolute(roots[i])
+                poles.append(roots[i])
 
         return poles, [], k
 
@@ -155,12 +164,13 @@ class Bessel(implements(Approximation)):
             if n == 1:
                 Bessel.polynomials.append(Polynomial(coef=[1, 1]))
             elif n == 2:
-                Bessel.polynomials.append(Polynomial(coef=[1, 3, 3]))
+                Bessel.polynomials.append(Polynomial(coef=[3, 3, 1]))
             else:
-                b_n_2 = Bessel.get_poly(n-2)
-                b_n_1 = poly.polymul(Polynomial(coef=[0, 2*n-1]), Bessel.get_poly(n-1))
+                b_n_2 = poly.polymul(Polynomial(coef=[0, 0, 1]), Bessel.get_poly(n-2))
+                b_n_1 = poly.polymul(Polynomial(coef=[2*n-1]), Bessel.get_poly(n-1))
                 b_n = poly.polyadd(b_n_1, b_n_2)
-                Bessel.polynomials.append(b_n)
+                Bessel.polynomials.append(b_n[0])
+
         return Bessel.polynomials[n-1]
 
 
