@@ -3,6 +3,9 @@ import math
 import cmath
 import numpy as np
 from scipy import signal
+from appoximations import Butterworth
+from filter_template import AttenuationTemplate
+import matplotlib.pyplot as plt
 
 
 class Filter(ABC):
@@ -17,9 +20,10 @@ class Filter(ABC):
         self.poles = []
         self.zeros = []
         self.k = None
+
 # porcentaje de normalizacion ahre
 # etapas
-#
+
     @abstractmethod
     def normalize(self):
         pass
@@ -61,12 +65,29 @@ class Filter(ABC):
         pass
 
     def calculate_poles(self):
-        self.normalize()     # obtengo polos para la normalizada
-        # asignar self.poles y self.zeroes y self.k a lo que me devuelva el switcher de lp hp bp rb
-        self.add_only_one_complex(self.poles)  # elimino uno de los dos complejos conjugados
-        self.add_only_one_complex(self.zeros)
-
+        self.normalize()
+        # asignar self.poles y self.zeroes y self.k a lo que me devuelva el switcher
+        template = AttenuationTemplate(wa_norm=self.wan, alpha_p=self.alphaP, alpha_a=alpha_a)
+        n = Butterworth.get_min_n(template)
+        [self.poles, self.zeros, self.k] = Butterworth.pzk(template=template, n=n)
         self.denormalize()      # desnormalizo todos los polos
+
+        def switch(self.type4):
+            switcher = {
+                1: "lp",
+                2: "hp",
+                3: "March",
+                4: "April",
+            }
+        switcher.get(self.type)
+        re_add_complex(self.zeros)
+        re_add_complex(self.poles)
+        sys = signal.ZerosPolesGain(self.zeros, self.poles, self.k)
+        hmia = sys.to_tf()
+        [w, mag, pha] = signal.bode(hmia)
+        plt.semilogx(w, -mag)
+        plt.grid(b=True)
+        plt.show()
 
     # --------------------------
     # add_only_one_complex
@@ -87,3 +108,23 @@ class Filter(ABC):
             else:
                 pass
 
+        return complex_nums
+    # --------------------------
+    # re_add_complex
+    # -------------------------
+    # recorre la lista complex_nums, reconoce los numeros pertenecientes a C-R
+    # con parte imaginaria positiva
+    # de aqui agrega a la lista el complejo con parte imaginaria negativa y
+    # deja su conjugado en la lista.
+
+    # INPUT:
+        # 1) complex_nums: lista con numeros a la cual se le eliminara cualquier complejo con parte imaginaria negativa
+    # OUTPUT:
+        # void.
+    def re_add_complex(self, complex_nums):
+        for comp in complex_nums:
+            if not comp.imag > 0:
+                new_comp = conj(comp)
+                complex_nums.append(new_comp)
+            else:
+                pass

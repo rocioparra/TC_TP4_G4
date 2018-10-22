@@ -18,11 +18,11 @@ class LowPass(filter.Filter):
     def denormalize_one_pole(self, pole):
         # cambio de variable: s-> s/wp
 
-        # 1/(s-p) -> (wp) *s/(s - wp*p)
+        # 1/(s-p) -> (wp) /(s - wp*p)
         # entonces por cada polo REAL en poles tengo:
 
         if pole.imag == 0:
-            [denorm_zeroes, denorm_poles, gain_factor] = scipy.signal.tf2zpk([self.wp, 0], [1, -self.wp*pole])
+            [denorm_zeroes, denorm_poles, gain_factor] = scipy.signal.tf2zpk([self.wp], [1, -self.wp*pole])
 
         # 1/( (s-p)*(s-conj(p))) =  1/(s^2 -2*real(p)*s + abs(p)^2) ->
         # (wp)^2 / (s^2 - 2*real(p)*wp *s + wp^2*abs(p)^2)
@@ -50,11 +50,11 @@ class HighPass(filter.Filter):
     def denormalize_one_pole(self, pole):
         # cambio de variable: s-> wp/s
 
-        # 1/(s-p) -> (-1/p) *s/(s - wp/p)
+        # 1/(s-p) -> 1/(wp/s -p) -> (-s)/(s*p - wp)
         # entonces por cada polo REAL en poles tengo:
 
         if pole.imag == 0:
-            [denorm_zeroes, denorm_poles, gain_factor] = scipy.signal.tf2zpk([-1],[pole, -self.wp])
+            [denorm_zeroes, denorm_poles, gain_factor] = scipy.signal.tf2zpk([-1, 0], [pole, -self.wp])
 
         # 1/( (s-p)*(s-conj(p))) =  1/(s^2 -2*real(p)*s + abs(p)^2) ->
         # s^2/((p*conj(p))*s^2 + (- p*wp - wp*conj(p))*s + wp^2)
@@ -62,7 +62,9 @@ class HighPass(filter.Filter):
         # entonces por cada polo IMAGINARIO en poles tengo:
 
         else:
-            [denorm_zeroes, denorm_poles, gain_factor] = scipy.signal.tf2zpk([1], [abs(pole)**2, -self.wp*2*np.real(pole), self.wp**2])
+            [denorm_zeroes, denorm_poles, gain_factor] = scipy.signal.tf2zpk([1, 0, 0],
+                                                                             [abs(pole) ** 2, -self.wp * 2 * np.real(pole),
+                                                                              self.wp ** 2])
 
         return [denorm_poles, denorm_zeroes, gain_factor]
 
@@ -92,7 +94,7 @@ class BandPass(filter.Filter):
         # entonces por cada polo REAL tengo:
 
         if pole.imag == 0:
-            [denorm_zeroes, denorm_poles, gain_factor] = scipy.signal.tf2zpk([self.wo], [self.q, -pole * self.wo, self.q * self.wo**2])
+            [denorm_zeroes, denorm_poles, gain_factor] = scipy.signal.tf2zpk([self.wo, 0], [self.q, -pole * self.wo, self.q * self.wo**2])
 
         # 1/( (s-p)*(s-conj(p)) ) ->
         # ((-wo^2)*s^2)/((-q^2)*s^4 + q*wo*(conj(p) + p) *s^3 + (- 2*q^2*wo^2 - p*conj(p)*wo^2)*s^2 + (p*q*wo^3 + q*wo^3*conj(p))*s - q^2*wo^4)
@@ -107,8 +109,7 @@ class BandPass(filter.Filter):
             d = 2 * np.real(pole) * self.q * self.wo**3
             e = - self.q**2 * self.wo**4
 
-            [denorm_zeroes, denorm_poles, gain_factor] = scipy.signal.tf2zpk([-self.wo**2], [a, b, c, d, e])
-
+            [denorm_zeroes, denorm_poles, gain_factor] = scipy.signal.tf2zpk([-self.wo**2, 0, 0], [a, b, c, d, e])
 
         return [denorm_poles, denorm_zeroes, gain_factor]
 
@@ -150,7 +151,7 @@ class BandReject(filter.Filter):
             # numerador
             a = self.q**2
             c = 2 * self.q**2 * self.wo**2
-            e = self.q**2 * self.wo**2
+            e = self.q**2 * self.wo**4
             # denominador
 
             f = abs(pole)**2 * self.q**2
