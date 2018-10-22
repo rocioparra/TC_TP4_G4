@@ -4,7 +4,9 @@ import cmath
 import numpy as np
 from scipy import signal
 from appoximations import Butterworth
-from filter_template import AttenuationTemplate
+from filter_template import LowPassTemplate
+from filter_template import GroupDelayTemplate
+from appoximations import approximation_factory
 import matplotlib.pyplot as plt
 
 
@@ -17,9 +19,12 @@ class Filter(ABC):
         self.n = n  # # ver que onda cuando lo calculo yo vs cuando me lo imponen
         self.alphaP = alphaP
         self.alphaA = alphaA
-        self.poles = []
-        self.zeros = []
-        self.k = None
+        self.normalized_poles = []
+        self.denormalized_poles = []
+        self.normalized_zeros = []
+        self.denormalized_zeros = []
+        self.normalized_k = None
+        self.denormalized_k = None
 
 # porcentaje de normalizacion ahre
 # etapas
@@ -31,18 +36,17 @@ class Filter(ABC):
     #me deja en self poles y en self.zeroes todos los ceros y polos resultantes de desnormalizar
     def denormalize(self):
         self.k = 1
-        final_denorm_poles = []
-        final_denorm_zeroes = []
+        self.denormalized_poles = []    #vacio las listas por las dudas
+        self.denormalized_zeros = []
 
         for p in self.poles:
             [denorm_poles, denorm_zeroes, gain_factor] = self.denormalize_one_pole(p)
-            # si se puede apependear tod o junto mejor, no lo se hacer en sintaxis
-            final_denorm_poles.append(denorm_poles)
-            final_denorm_zeroes.append(denorm_zeroes)
-            self.k = self.k * gain_factor
+            self.denormalized_poles.append(denorm_poles)
+            self.denormalized_zeros.append(denorm_zeroes)
+            self.normalized_k = self.k * gain_factor
 
-        self.poles = self.add_only_one_complex(final_denorm_poles)
-        self.zeros = self.add_only_one_complex(final_denorm_zeroes)
+        self.denormalized_poles = self.add_only_one_complex(self.denormalized_poles)
+        self.denormalized_zeros = self.add_only_one_complex(self.denormalized_zeros)
 
     # --------------------------
     # denormalize_one_pole
@@ -65,23 +69,17 @@ class Filter(ABC):
         pass
 
     def calculate_poles(self):
-        self.normalize()
-        # asignar self.poles y self.zeroes y self.k a lo que me devuelva el switcher
-        template = AttenuationTemplate(wa_norm=self.wan, alpha_p=self.alphaP, alpha_a=alpha_a)
-        n = Butterworth.get_min_n(template)
-        [self.poles, self.zeros, self.k] = Butterworth.pzk(template=template, n=n)
-        self.denormalize()      # desnormalizo todos los polos
+        norm_template = self.normalize()
+        approximation = approximation_factory(self.approx, norm_template)
+        n = approximation.get_min_n()
+        [self.normalized_poles, self.normalized_zeros, self.normalized_k] = approximation.pzk(n)
+        norm_template = self.denormalize()      # desnormalizo todos los polos
 
-        def switch(self.type4):
-            switcher = {
-                1: "lp",
-                2: "hp",
-                3: "March",
-                4: "April",
-            }
-        switcher.get(self.type)
-        re_add_complex(self.zeros)
-        re_add_complex(self.poles)
+
+        #antes de graficar, si necesito todos los polos:
+        self.re_add_complex(self.denormalized_zeros)
+        self.re_add_complex(self.denormalized_poles)
+
         sys = signal.ZerosPolesGain(self.zeros, self.poles, self.k)
         hmia = sys.to_tf()
         [w, mag, pha] = signal.bode(hmia)
@@ -101,9 +99,10 @@ class Filter(ABC):
         # 1) complex_nums: lista con numeros a la cual se le eliminara cualquier complejo con parte imaginaria negativa
     # OUTPUT:
         # void.
-    def add_only_one_complex(self, complex_nums):
+    @staticmethod
+    def add_only_one_complex(complex_nums):
         for comp in complex_nums:
-            if comp.imag <0:
+            if comp.imag < 0:
                 complex_nums.remove(comp)
             else:
                 pass
@@ -121,10 +120,11 @@ class Filter(ABC):
         # 1) complex_nums: lista con numeros a la cual se le eliminara cualquier complejo con parte imaginaria negativa
     # OUTPUT:
         # void.
-    def re_add_complex(self, complex_nums):
+    @staticmethod
+    def re_add_complex(complex_nums):
         for comp in complex_nums:
-            if not comp.imag > 0:
-                new_comp = conj(comp)
-                complex_nums.append(new_comp)
+            if comp.imag > 0:
+                complex_nums.append(np.conj(comp))
             else:
                 pass
+

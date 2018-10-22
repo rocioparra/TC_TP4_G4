@@ -22,3 +22,6 @@ class GroupDelayTemplate(FilterTemplate):
         self.tol = tolerance
         self.w_rg = w_rg
         self.tau = tau
+
+
+

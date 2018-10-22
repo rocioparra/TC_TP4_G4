@@ -1,11 +1,27 @@
-import filter
+from filter import Filter
 import numpy as np
 import scipy
 from filter_template import GroupDelayTemplate
 
-class LowPass(filter.Filter):
+
+def filter_factory(filter_type, param):
+    if filter_type == "lp":
+        return LowPass(param(0), param(1),param(2), param(3), param(4))
+    elif filter_type == "hp":
+        return HighPass(param(0), param(1),param(2), param(3), param(4))
+    elif filter_type == "bp":
+        return InvChebyshev(template)
+    elif filter_type == "br":
+        return Bessel(template)
+    else:
+        pass
+
+
+pass
+
+class LowPass(Filter):
     def __init__(self, approx, template, alphaP, alphaA, n):
-        filter.Filter.__init__(self, "lp", approx, alphaP, alphaA, n)
+        Filter.__init__(self, "lp", approx, alphaP, alphaA, n)
         self.wp = template[0]
         self.wa = template[1]
         self.wan = 0        #los inicializo en valores invalidos
@@ -34,9 +50,9 @@ class LowPass(filter.Filter):
         return [denorm_poles, denorm_zeroes, gain_factor]
 
 
-class HighPass(filter.Filter):
+class HighPass(Filter):
     def __init__(self, approx, template, alphaP, alphaA, n):
-        filter.Filter.__init__(self, "hp", approx, alphaP, alphaA, n)
+        Filter.__init__(self, "hp", approx, alphaP, alphaA, n)
         self.wp = template[0]
         self.wa = template[1]
         self.wan = 0        #los inicializo en valores invalidos
@@ -68,9 +84,9 @@ class HighPass(filter.Filter):
 
         return [denorm_poles, denorm_zeroes, gain_factor]
 
-class BandPass(filter.Filter):
+class BandPass(Filter):
     def __init__(self, approx, template, alphaP, alphaA, n):
-        filter.Filter.__init__(self, "bp", approx, alphaP, alphaA, n)
+        Filter.__init__(self, "bp", approx, alphaP, alphaA, n)
         self.wa_minus = template[0]
         self.wp_minus = template[1]
         self.wa_plus = template[2]
@@ -114,9 +130,9 @@ class BandPass(filter.Filter):
         return [denorm_poles, denorm_zeroes, gain_factor]
 
 
-class BandReject(filter.Filter):
+class BandReject(Filter):
     def __init__(self, approx, template, alphaP, alphaA, n):
-        filter.Filter.__init__(self, "br", approx, alphaP, alphaA, n)
+        Filter.__init__(self, "br", approx, alphaP, alphaA, n)
         self.w0 = None  # ver esto
         self.q = None
 
@@ -165,10 +181,10 @@ class BandReject(filter.Filter):
         return [denorm_poles, denorm_zeroes, gain_factor]
 
 
-class GroupDelay(filter.Filter):
+class GroupDelay(Filter):
     # params = [w_rg, tau, tolerance]
     def __init__(self, params, n, approx):
-        filter.Filter.__init__(self, filter_type="gd", approx=approx, alphaP=0, alphaA=0, n=n)
+        Filter.__init__(self, filter_type="gd", approx=approx, alphaP=0, alphaA=0, n=n)
         self.w_rg = params[0]
         self.tau = params[1]
         self.tolerance = params[2]
