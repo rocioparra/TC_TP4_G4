@@ -7,16 +7,18 @@ class FilterTemplate(ABC):
         # self.n = 0
 
 
-class AttenuationTemplate(FilterTemplate):
-    def __init__(self, wa_norm, alpha_p, alpha_a):
-        super().__init__('at')
-        self.wa_norm = wa_norm
+class LowPassTemplate(FilterTemplate):
+    def __init__(self, wp, wa, alpha_p, alpha_a):
+        super().__init__('lp')
+        self.wa = wa
+        self.wp = wp
         self.alpha_p = alpha_p
         self.alpha_a = alpha_a
 
 
 class GroupDelayTemplate(FilterTemplate):
-    def __init__(self, w_rg, tolerance):
+    def __init__(self, w_rg, tau, tolerance):
         super().__init__('gd')
         self.tol = tolerance
         self.w_rg = w_rg
+        self.tau = tau

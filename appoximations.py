@@ -7,6 +7,18 @@ from numpy.polynomial import Polynomial
 import numpy.polynomial.polynomial as poly
 from group_delay import group_delay
 
+
+def approximation_factory(s):
+    switcher = {
+        "be": Bessel,
+        "bw": Butterworth,
+        "c1": Chebyshev,
+        "c2": InvChebyshev
+    }
+
+    return switcher.get(s)
+
+
 class Approximation(Interface):
     @staticmethod
     def get_min_n(template):
@@ -148,7 +160,6 @@ class Bessel(implements(Approximation)):
         poles = []
         roots = b_n.roots()
         for i in range(len(roots)):
-            #roots[i] *= template.w_rg ** 2
             if roots[i].imag > 0:
                 poles.append(roots[i])
                 k *= numpy.absolute(roots[i])**2
@@ -170,8 +181,8 @@ class Bessel(implements(Approximation)):
                 b_n_1 = poly.polymul(Polynomial(coef=[2*n-1]), Bessel.get_poly(n-1))
                 b_n = poly.polyadd(b_n_1, b_n_2)
                 Bessel.polynomials.append(b_n[0])
-
         return Bessel.polynomials[n-1]
+
 
 
 class Legendre(implements(Approximation)):
