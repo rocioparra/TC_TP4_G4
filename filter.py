@@ -1,25 +1,13 @@
 from abc import ABC, abstractmethod
-import math
-import cmath
 import numpy as np
 from scipy import signal
-from appoximations import Butterworth
-from filter_template import LowPassTemplate
-from filter_template import GroupDelayTemplate
 from appoximations import approximation_factory
 import matplotlib.pyplot as plt
 import filtertypes
 
 
-
 class Filter(ABC):
-    filter_dict = {
-        "Low-pass": filtertypes.LowPass,
-        "High-pass": filtertypes.HighPass,
-        "Band-pass": filtertypes.BandPass,
-        "Band-reject": filtertypes.BandReject,
-        "Group delay": filtertypes.GroupDelay
-    }
+    filter_dict = {}
 
     def __init__(self, filter_type, approx, n):
         super().__init__()
@@ -35,12 +23,14 @@ class Filter(ABC):
         self.normalized_template = None
         self.denormalized_template = None
 
-
 # porcentaje de normalizacion ahre
 # etapas
 
     @staticmethod
     def get_available_filters():
+        if not Filter.filter_dict:
+            Filter.filter_dict = filtertypes.get_filter_dict()
+
         return list(Filter.filter_dict.keys())
 
     @staticmethod

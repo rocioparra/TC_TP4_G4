@@ -8,6 +8,7 @@ from filtertypes import GroupDelay
 from numpy.polynomial import Polynomial
 import numpy.polynomial.polynomial as poly
 from group_delay import group_delay
+import filter as f
 
 
 # wp = 1
@@ -56,7 +57,7 @@ from group_delay import group_delay
 tau = 10e-3
 w_rg = 1000
 tolerance = 0.20
-filter = LowPassTemplate(wp=1, wa=10, alpha_p=5, alpha_a=80)
+filter = LowPassTemplate(wp=1, wa=100, alpha_p=5, alpha_a=10)
 approx = InvChebyshev()
 n = approx.get_min_n(filter)
 
@@ -75,23 +76,78 @@ for zero in zpos:
 
 sys = signal.ZerosPolesGain(z, p, k)
 Hmia = sys.to_tf()
+
+wp = filter.wp
+wa = filter.wa
+alpha_a = filter.alpha_a
+alpha_p = filter.alpha_p
+
+
+w = numpy.logspace(start=0, stop=numpy.log10(wa), endpoint=True, base=10)
+[w, mag, _] = signal.bode(system=Hmia, w=w)
+wl = wp
+wh = wa
+
+at = -mag
+
+for i in range(len(w)):
+    if at[i] > alpha_p:
+        if i >= 1:
+            wl = w[i-1]
+        break
+
+for i in range(len(w)-1, -1, -1):
+    if at[i] < alpha_a:
+        if i < len(w)-1:
+            wh = w[i+1]
+        break
+
+k_h = wh/wa  # k_h <= 1
+k_l = wl/wp  # k_l >= 1
+
+norm = 50    # 0%    ->  k = k_l
+            # 100%  ->  k = k_h <= k_l
+            # x%    ->  k = k_h + (k_l-k_h) *x/100
+
+k_norm = k_h + (k_l-k_h) * norm / 100
+
+p = [pole/k_norm for pole in p]
+z = [zero/k_norm for zero in z]
+k = k * (k_norm**(len(z)-len(p)))
+
+
+sys = signal.ZerosPolesGain(z, p, k)
+Hmia = sys.to_tf()
 [w, mag, pha] = signal.bode(Hmia)
 plt.semilogx(w, -mag)
 plt.grid(b=True)
 plt.show()
-print(Hmia.num/Hmia.den[0])
-print(Hmia.den/Hmia.den[0])
 
-gd = -numpy.diff(pha)/numpy.diff(w)*math.pi/180
-w = numpy.delete(w, 0)
+print(f.Filter.get_available_filters())
+print(f.Filter.get_approximations_for("Group delay"))
+print(f.Filter.get_parameters_for("Low-pass"))
 
-plt.semilogx(w, gd)
-plt.grid(b=True)
-plt.show()
 
-gd = group_delay(w=w, p=p, z=z)
-plt.semilogx(w, gd)
-plt.grid(b=True)
-plt.show()
-# 135135,  135135,  62370,  17325,  3150,  378,  28,  1,
+# 0%:   w -> w1
+# 100%: w -> w1 + delta
+# x%:   w -> w1 + delta*x/100
 
+# print(Hmia.num/Hmia.den[0])
+# print(Hmia.den/Hmia.den[0])
+#
+#
+#
+#
+# gd = -numpy.diff(pha)/numpy.diff(w)*math.pi/180
+# w = numpy.delete(w, 0)
+#
+# plt.semilogx(w, gd)
+# plt.grid(b=True)
+# plt.show()
+#
+# gd = group_delay(w=w, p=p, z=z)
+# plt.semilogx(w, gd)
+# plt.grid(b=True)
+# plt.show()
+# # 135135,  135135,  62370,  17325,  3150,  378,  28,  1,
+#

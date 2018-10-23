@@ -132,7 +132,7 @@ class InvChebyshev(implements(Approximation)):
             gain /= numpy.absolute(z)**2
 
         if n % 2 == 1:
-            p = template.wa_norm/math.sinh(beta)
+            p = template.wa/math.sinh(beta)
             poles.append(p)
             gain *= (-p)
 
