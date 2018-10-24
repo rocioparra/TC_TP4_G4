@@ -58,8 +58,8 @@ class HighPass(filter.Filter):
 
     def normalize(self):
         self.normalized_template = \
-            LowPassTemplate(wp=1, wa=self.denormalized_template.wp / self.denormalized_template.wa,
-                            alpha_p=self.denormalized_template.alpha_p, alpha_a=self.denormalized_template.alpha_a,
+            LowPassTemplate(param=[1, self.denormalized_template.wp / self.denormalized_template.wa,
+                                   self.denormalized_template.alpha_p, self.denormalized_template.alpha_a],
                             n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
                             q_max=self.denormalized_template.q_max,
                             denorm_degree=self.denormalized_template.denorm_degree)
@@ -101,9 +101,9 @@ class BandPass(filter.Filter):
     def normalize(self):
         wa_norm = self.denormalized_template.bw_a/self.denormalized_template.bw_p
         self.normalized_template = \
-            LowPassTemplate(wp=1, wa=wa_norm, alpha_a=self.denormalized_template.alpha_a,
-                            alpha_p=self.denormalized_template.alpha_p, n_min=self.denormalized_template.n_min,
-                            n_max=self.denormalized_template.n_max, q_max=self.denormalized_template.q_max,
+            LowPassTemplate(param=[1, wa_norm, self.denormalized_template.alpha_a, self.denormalized_template.alpha_p],
+                            n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
+                            q_max=self.denormalized_template.q_max,
                             denorm_degree=self.denormalized_template.denorm_degree)
 
     def denormalize_one_pole(self, pole):
@@ -114,7 +114,8 @@ class BandPass(filter.Filter):
         # entonces por cada polo REAL tengo:
 
         if pole.imag == 0:
-            [denorm_zeroes, denorm_poles, gain_factor] = scipy.signal.tf2zpk([self.wo, 0], [self.q, -pole * self.wo, self.q * self.wo**2])
+            [denorm_zeroes, denorm_poles, gain_factor] = \
+                signal.tf2zpk([self.wo, 0], [self.q, -pole * self.wo, self.q * self.wo**2])
 
         # 1/( (s-p)*(s-conj(p)) ) ->
         # ((-wo^2)*s^2)/((-q^2)*s^4 + q*wo*(conj(p) + p) *s^3 + (- 2*q^2*wo^2 - p*conj(p)*wo^2)*s^2 + (p*q*wo^3 + q*wo^3*conj(p))*s - q^2*wo^4)
@@ -150,9 +151,9 @@ class BandReject(filter.Filter):
     def normalize(self):
         wa_norm = self.denormalized_template.bw_p / self.denormalized_template.bw_a
         self.normalized_template = \
-            LowPassTemplate(wp=1, wa=wa_norm, alpha_a=self.denormalized_template.alpha_a,
-                            alpha_p=self.denormalized_template.alpha_p, n_min=self.denormalized_template.n_min,
-                            n_max=self.denormalized_template.n_max, q_max=self.denormalized_template.q_max,
+            LowPassTemplate(param=[1, wa_norm, self.denormalized_template.alpha_a, self.denormalized_template.alpha_p],
+                            n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
+                            q_max=self.denormalized_template.q_max,
                             denorm_degree=self.denormalized_template.denorm_degree)
 
     def denormalize_one_pole(self, pole):
@@ -163,7 +164,7 @@ class BandReject(filter.Filter):
         # entonces por cada polo REAL tengo:
 
         if pole.imag == 0:
-            [denorm_zeroes, denorm_poles, gain_factor] = scipy.signal.tf2zpk(
+            [denorm_zeroes, denorm_poles, gain_factor] = signal.tf2zpk(
                 [-self.q, 0, -self.q*self.wo**2], [pole*self.q, - self.wo, pole*self.q*self.wo**2])
 
         # (q^2*s^4 + 2*q^2*s^2*wo^2 + q^2*wo^4) /
@@ -187,7 +188,7 @@ class BandReject(filter.Filter):
             i = -self.wo**3*self.q*2*np.real(pole)
             j = abs(pole)**2 * self.q**2 * self.wo**4
 
-            [denorm_zeroes, denorm_poles, gain_factor] = scipy.signal.tf2zpk([a, 0, c, 0, e], [f, g, h, i, j])
+            [denorm_zeroes, denorm_poles, gain_factor] = signal.tf2zpk([a, 0, c, 0, e], [f, g, h, i, j])
 
         return [denorm_poles, denorm_zeroes, gain_factor]
 
@@ -209,15 +210,13 @@ class GroupDelay(filter.Filter):
     def normalize(self):
         w_rgn = self.denormalized_template.w_rg * self.denormalized_template.tau
         self.normalized_template = \
-            GroupDelayTemplate(w_rg=w_rgn, tau=1, tolerance=self.denormalized_template.tolerance,
+            GroupDelayTemplate(param=[w_rgn, 1, self.denormalized_template.tolerance],
                                n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
                                q_max=self.denormalized_template.q_max)
 
     def denormalize_one_pole(self, pole):
         self.denormalized_k /= self.denormalized_template.tau
         self.denormalized_poles.append(pole/self.denormalized_template.tau)
-
-
 
     def correct_norm_degree(self):
         pass

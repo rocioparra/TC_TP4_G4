@@ -4,6 +4,8 @@ from scipy import signal
 from appoximations import approximation_factory
 import matplotlib.pyplot as plt
 import copy
+from stages import Stage
+
 
 class Filter(ABC):
     def __init__(self, filter_type, approx):

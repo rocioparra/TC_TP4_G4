@@ -12,7 +12,6 @@ def group_delay(w, p, z):
                 delta = next((d for d in deltas if d[0] == freq), None)
                 if delta is None:
                     delta = [freq, math.pi]  # cada delta es un salto de pi
-
                 else:
                     deltas.remove(delta)
                     delta[1] += math.pi
