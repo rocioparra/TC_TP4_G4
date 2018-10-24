@@ -229,13 +229,20 @@ class Filter(ABC):
         zeros = self.denormalized_zeros
         poles = self.denormalized_poles
 
+        n = len(poles)  # para asignarle a todos la misma ganancia al principio
+
         for zero in zeros:
-            st = Stage.find_best_partner(zeros=zero, poles=poles, gain_factor=self.gain_factor,
+            st = Stage.find_best_partner(zero=zero, poles=poles, gain_factor=self.gain_factor**(1/float(n)),
                                          vout_min=vout_min, vout_max=vout_max,
                                          pass_bands=self.denormalized_template.get_pass_bands())
             self.stages.append(st)
         for pole in poles:              # me quede sin ceros, procedo con los polos!
-            self.stages.append(Stage(pole, [], self.gain_factor))
+            self.stages.append(Stage(pole, [], self.gain_factor**(1/float(n))))
+
+        # ahora corrijo la ganancia para el principio
+        self.stages[0].gain_factor = self.gain_factor * (1 - log10(g))
+        for i in range(1, len(stages), 1):
+            self.stages[i].gain_factor = (float(g) / (float(g) - log10(g)))**(1/float(n-1))
 
         return self.stages
 
@@ -257,7 +264,18 @@ class Filter(ABC):
         Stage.update_dynamic_ranges(self.stages, vout_min, vout_max)
         return self.stages
 
-    def calculate_total_rd(self, vout_min, vout_max):
+    # --------------------------
+    # calculate_total_rd
+    # -------------------------
+    # calculate_total_rd devuelve el rango dinamico completo
+    # PARA EL FILTRO CON LAS ETAPAS CALCULADAS ANTERIORMENTE CON EL LLAMADO A STAGE DECOMPOSITION!!
+
+    # INPUT:
+        # nothing
+    # OUTPUT:
+        # rd total del filtro con las etapas calculadas anteriormente
+    def calculate_total_rd(self):
+
         prev_stage = None
 
         for i in range(len(self.stages)-1, 0, -1):
