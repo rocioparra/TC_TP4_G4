@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from scipy import signal
 from appoximations import approximation_factory
+from stages import Stage
 
 
 class Filter(ABC):
