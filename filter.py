@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 import numpy as np
 from scipy import signal
 from appoximations import approximation_factory
-import matplotlib.pyplot as plt
 
 
 class Filter(ABC):
