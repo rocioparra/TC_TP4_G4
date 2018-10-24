@@ -2,28 +2,13 @@ import filter
 import numpy as np
 from scipy import signal
 import appoximations
-from filter_template import GroupDelayTemplate
-from filter_template import LowPassTemplate
-
-
-def get_filter_dict():
-    filter_dict = {
-        "Low-pass": LowPass,
-        "High-pass": HighPass,
-        "Band-pass": BandPass,
-        "Band-reject": BandReject,
-        "Group delay": GroupDelay
-    }
-    return filter_dict
+from filter_template import LowPassTemplate, HighPassTemplate, BandPassTemplate, BandRejectTemplate, GroupDelayTemplate
 
 
 class LowPass(filter.Filter):
-    def __init__(self, approx, wp, wa, alpha_a, alpha_p, n):
-        super().__init__("lp", approx, n)
-        self.alpha_a = alpha_a
-        self.alpha_p = alpha_p
-        self.wp = wp
-        self.wa = wa
+    def __init__(self, template, approx):
+        super().__init__("Low-pass", approx)
+        self.denormalized_template = template
 
     @staticmethod
     def get_available_approximations():
@@ -34,34 +19,34 @@ class LowPass(filter.Filter):
         return ["wp", "wa", "alpha p", "alpha a"]
 
     def normalize(self):
-        self.normalized_template = LowPassTemplate(wp=1, wa=self.wa/self.wp, alpha_a=self.alpha_a, alpha_p=self.alpha_p)
+        self.normalized_template = self.denormalized_template
+        self.normalized_template.wp = 1
+        self.normalized_template.wa = self.denormalized_template.wa/self.denormalized_template.wp
 
     def denormalize_one_pole(self, pole):
         # cambio de variable: s-> s/wp
 
         # 1/(s-p) -> (wp) /(s - wp*p)
         # entonces por cada polo REAL en poles tengo:
-
+        wp = self.denormalized_template.wp
         if pole.imag == 0:
-            [denorm_zeroes, denorm_poles, gain_factor] = signal.tf2zpk([self.wp], [1, -self.wp*pole])
+            [denorm_zeroes, denorm_poles, gain_factor] = signal.tf2zpk([wp], [1, -wp*pole])
 
         # 1/( (s-p)*(s-conj(p))) =  1/(s^2 -2*real(p)*s + abs(p)^2) ->
         # (wp)^2 / (s^2 - 2*real(p)*wp *s + wp^2*abs(p)^2)
         # entonces por cada polo IMAGINARIO tengo:
 
         else:
-            [denorm_zeroes, denorm_poles, gain_factor] = signal.tf2zpk([self.wp**2], [1, - 2 * np.real(pole)*self.wp, self.wp**2 * abs(pole)**2])
+            [denorm_zeroes, denorm_poles, gain_factor] = \
+                signal.tf2zpk([wp**2], [1, - 2 * np.real(pole)*wp, wp**2 * abs(pole)**2])
 
         return [denorm_poles, denorm_zeroes, gain_factor]
 
 
 class HighPass(filter.Filter):
-    def __init__(self, approx, wa, wp, alpha_a, alpha_p, n):
-        super().__init__(filter_type="hp", approx=approx, n=n)
-        self.alpha_a = alpha_a
-        self.alpha_p = alpha_p
-        self.wp = wp
-        self.wa = wa
+    def __init__(self, template, approx):
+        super().__init__("High-pass", approx)
+        self.denormalized_template = template
 
     @staticmethod
     def get_available_approximations():
@@ -72,16 +57,21 @@ class HighPass(filter.Filter):
         return ["wp", "wa", "alpha p", "alpha a"]
 
     def normalize(self):
-        self.normalized_template = LowPassTemplate(wp=1, wa=self.wp / self.wa, alpha_p=self.alpha_p, alpha_a=self.alpha_a)
+        self.normalized_template = \
+            LowPassTemplate(wp=1, wa=self.denormalized_template.wp / self.denormalized_template.wa,
+                            alpha_p=self.denormalized_template.alpha_p, alpha_a=self.denormalized_template.alpha_a,
+                            n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
+                            q_max=self.denormalized_template.q_max,
+                            denorm_degree=self.denormalized_template.denorm_degree)
 
     def denormalize_one_pole(self, pole):
         # cambio de variable: s-> wp/s
 
         # 1/(s-p) -> 1/(wp/s -p) -> (-s)/(s*p - wp)
         # entonces por cada polo REAL en poles tengo:
-
+        wp = self.denormalized_template.wp
         if pole.imag == 0:
-            [denorm_zeroes, denorm_poles, gain_factor] = scipy.signal.tf2zpk([-1, 0], [pole, -self.wp])
+            [denorm_zeroes, denorm_poles, gain_factor] = signal.tf2zpk([-1, 0], [pole, -wp])
 
         # 1/( (s-p)*(s-conj(p))) =  1/(s^2 -2*real(p)*s + abs(p)^2) ->
         # s^2/((p*conj(p))*s^2 + (- p*wp - wp*conj(p))*s + wp^2)
@@ -89,24 +79,16 @@ class HighPass(filter.Filter):
         # entonces por cada polo IMAGINARIO en poles tengo:
 
         else:
-            [denorm_zeroes, denorm_poles, gain_factor] = scipy.signal.tf2zpk([1, 0, 0],
-                                                                             [abs(pole) ** 2, -self.wp * 2 * np.real(pole),
-                                                                              self.wp ** 2])
+            [denorm_zeroes, denorm_poles, gain_factor] = \
+                signal.tf2zpk([1, 0, 0], [abs(pole) ** 2, -wp * 2 * np.real(pole), wp ** 2])
 
         return [denorm_poles, denorm_zeroes, gain_factor]
 
 
 class BandPass(filter.Filter):
-    def __init__(self, approx, wa_minus, wp_minus, wa_plus, wp_plus, alpha_p, alpha_a, n):
-        super().__init__("bp", approx, n)
-        self.alpha_a = alpha_a
-        self.alpha_p = alpha_p
-        self.wa_minus = wa_minus
-        self.wp_minus = wp_minus
-        self.wa_plus = wa_plus
-        self.wp_plus = wp_plus
-        self.wo = np.sqrt(self.wa_plus*self.wa_minus)
-        self.q = self.wo / (self.wp_plus - self.wp_minus)
+    def __init__(self, template, approx):
+        super().__init__("Band-pass", approx)
+        self.denormalized_template = template
 
     @staticmethod
     def get_available_approximations():
@@ -114,10 +96,15 @@ class BandPass(filter.Filter):
 
     @staticmethod
     def get_parameter_list():
-        return ["w0", "Q", "alpha p", "alpha a"]
+        return ["w0", "bandwidth p", "bandwidth a" "alpha p", "alpha a"]
 
     def normalize(self):
-        self.normalized_template = LowPassTemplate(wp=1, wa=(self.wa_plus - self.wa_minus) / (self.wp_plus - self.wp_minus), alpha_a=self.alpha_a, alpha_p=self.alpha_p)
+        wa_norm = self.denormalized_template.bw_a/self.denormalized_template.bw_p
+        self.normalized_template = \
+            LowPassTemplate(wp=1, wa=wa_norm, alpha_a=self.denormalized_template.alpha_a,
+                            alpha_p=self.denormalized_template.alpha_p, n_min=self.denormalized_template.n_min,
+                            n_max=self.denormalized_template.n_max, q_max=self.denormalized_template.q_max,
+                            denorm_degree=self.denormalized_template.denorm_degree)
 
     def denormalize_one_pole(self, pole):
         # cambio de variable: s -> q*(s/wo+wo/s) = q*(s^2+wo^2)/(s*wo)
@@ -148,12 +135,9 @@ class BandPass(filter.Filter):
 
 
 class BandReject(filter.Filter):
-    def __init__(self, approx, w0, q, alpha_a, alpha_p, n):
-        super().__init__("br", approx, n)
-        self.alpha_a = alpha_a
-        self.alpha_p = alpha_p
-        self.w0 = w0
-        self.q = q
+    def __init__(self, template, approx):
+        super().__init__("Band-reject", approx)
+        self.denormalized_template = template
 
     @staticmethod
     def get_available_approximations():
@@ -161,10 +145,15 @@ class BandReject(filter.Filter):
 
     @staticmethod
     def get_parameter_list():
-        return ["w0", "Q", "alpha p", "alpha a"]
+        return ["w0", "bandwidth p", "bandwidth a" "alpha p", "alpha a"]
 
     def normalize(self):
-        self.normalized_template = LowPassTemplate(wp=1, wa=(self.wp_plus - self.wp_minus) /(self.wa_plus - self.wa_minus),alpha_p=self.alpha_p, alpha_a=self.alpha_a)
+        wa_norm = self.denormalized_template.bw_p / self.denormalized_template.bw_a
+        self.normalized_template = \
+            LowPassTemplate(wp=1, wa=wa_norm, alpha_a=self.denormalized_template.alpha_a,
+                            alpha_p=self.denormalized_template.alpha_p, n_min=self.denormalized_template.n_min,
+                            n_max=self.denormalized_template.n_max, q_max=self.denormalized_template.q_max,
+                            denorm_degree=self.denormalized_template.denorm_degree)
 
     def denormalize_one_pole(self, pole):
 
@@ -205,11 +194,9 @@ class BandReject(filter.Filter):
 
 class GroupDelay(filter.Filter):
     # params = [w_rg, tau, tolerance]
-    def __init__(self, approx, w_rg, tau, tolerance, n):
-        super().__init__(filter_type="gd", approx=approx, n=n)
-        self.w_rg = w_rg
-        self.tau = tau
-        self.tolerance = tolerance
+    def __init__(self, template, approx):
+        super().__init__(filter_type="Group delay", approx=approx)
+        self.denormalized_template = template
 
     @staticmethod
     def get_available_approximations():
@@ -220,8 +207,17 @@ class GroupDelay(filter.Filter):
         return ["w rg", "tau", "alpha p", "alpha a"]
 
     def normalize(self):
-        self.normalized_template = GroupDelayTemplate(w_rg=self.w_rg * self.tau, tau=1, tolerance=self.tolerance)
+        w_rgn = self.denormalized_template.w_rg * self.denormalized_template.tau
+        self.normalized_template = \
+            GroupDelayTemplate(w_rg=w_rgn, tau=1, tolerance=self.denormalized_template.tolerance,
+                               n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
+                               q_max=self.denormalized_template.q_max)
 
     def denormalize_one_pole(self, pole):
-        self.denormalized_k /= self.tau
-        self.denormalized_poles.append(pole/self.tau)
+        self.denormalized_k /= self.denormalized_template.tau
+        self.denormalized_poles.append(pole/self.denormalized_template.tau)
+
+
+
+    def correct_norm_degree(self):
+        pass
