@@ -5,7 +5,6 @@ from appoximations import approximation_factory
 
 
 class Filter(ABC):
-
     def __init__(self, filter_type, approx):
         self.type = filter_type
         self.approx = approx
@@ -17,9 +16,8 @@ class Filter(ABC):
         self.denormalized_k = None
         self.normalized_template = None
         self.denormalized_template = None
-#        self.normalized_tf = None
-#        self.denormalized_tf = None
         self.n = None
+        self.stages = None
 
     @staticmethod
     @abstractmethod
@@ -90,7 +88,7 @@ class Filter(ABC):
     # --------------------------
     # calculate_poles
     # -------------------------
-    # calculate_poles
+    # calculate_poles hace normalizacion del filtro, obtiene la funcion transferencia para la aproximacion pertinente
 
     # INPUT:
         # no input
@@ -211,3 +209,41 @@ class Filter(ABC):
             return max(q)
         else:
             return 0
+
+    # --------------------------
+    # auto_stage_decomposition
+    # -------------------------
+    # auto_stage_decomposition obtiene la cadena de etapas que intentan maximizar el rd total
+
+    # INPUT:
+        # 1) vout_min: minimo vout para el filtro para superar el piso de ruido
+        # 2) vout_max: maximo vout para el filtro total para que no saturen los opamps en alguna de las etapas
+    # OUTPUT:
+        # void.
+    def auto_stage_decomposition(self, vout_min, vout_max):
+
+        self.stages.clear()
+        zeros = self.denormalized_zeros
+        poles = self.denormalized_poles
+        for zero in zeros:
+            st = Stage.find_best_partner(zero, poles, self.gain_factor, vout_min, vout_max)
+            self.stages.append(st)
+        for pole in poles:              #me quede sin ceros, procedo con los polos!
+            self.stages.append(Stage(pole, [], self.gain_factor))
+
+    # --------------------------
+    # single_stage_decomposition
+    # -------------------------
+    # single_stage_decomposition obtiene una etapa para una cierta configuracion de polos y ceros, orden 1 o 2
+
+    # INPUT:
+        # 1) poles: polos para la construccion de la etapa
+        # 2) zeros: ceros para la construccion de la etapa
+        # 3) gain_factor: factor de ganancia para la construccion de la etapa
+    # OUTPUT:
+        # void.
+    def single_stage_decomposition(self, poles, zeros, gain_factor,vout_min, vout_max):
+        st = Stage(poles, zeros, gain_factor)  # ingresado por usuario, de una sola etapa x vez
+        self.stages.append(st)
+        Stage.update_dynamic_ranges(self.stages, vout_min, vout_max)
+
