@@ -4,13 +4,25 @@ import matplotlib.pyplot as plt
 import math
 import numpy
 from filter_template import GroupDelayTemplate, LowPassTemplate
-from filtertypes import GroupDelay
+from filtertypes import filter_factory
 from numpy.polynomial import Polynomial
 import numpy.polynomial.polynomial as poly
 from group_delay import group_delay
-import filter as f
+from filter import Filter
 
 
+print(Filter.get_available_filters())
+print(Filter.get_approximations_for("High-pass"))
+print(Filter.get_parameters_for("High-pass"))
+
+f = filter_factory("High-pass", "Chebyshev", [100, 10, 10, 50], 1, 25, 100, 0)
+f.calculate_pzkn()
+h = f.calculate_tf(f.denormalized_poles, f.denormalized_zeros, f.denormalized_k)
+
+[w, mag, pha] = signal.bode(h)
+plt.semilogx(w, -mag)
+plt.grid(b=True)
+plt.show()
 # wp = 1
 # wa = 2
 # alpha_p = 10*math.log10(2)
@@ -123,9 +135,6 @@ plt.semilogx(w, -mag)
 plt.grid(b=True)
 plt.show()
 
-print(f.Filter.get_available_filters())
-print(f.Filter.get_approximations_for("Group delay"))
-print(f.Filter.get_parameters_for("Low-pass"))
 
 
 # 0%:   w -> w1
