@@ -8,7 +8,7 @@ class TemplateParameters:
                  tau=False, tol=False, wrg=False):
         self.data = [wa, wp, alpha_a, alpha_p, w0, bw_p, bw_a, tau, tol, wrg]
         [self.wa, self.wp, self.alpha_a, self.alpha_p, self.w0, self.bw_p, self.bw_a, self.tau, self.tol, self.wrg] = \
-            [wa, wp, alpha_a, alpha_p, w0, wp, bw_a, tau, tol, wrg]
+            [wa, wp, alpha_a, alpha_p, w0, bw_p, bw_a, tau, tol, wrg]
 
 
 class FilterTemplate(ABC):

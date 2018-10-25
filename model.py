@@ -17,8 +17,9 @@ class Model:
             "Group delay":  [filtertypes.GroupDelay, filter_template.GroupDelayTemplate]
         }
         self.filters = {}
+        self.stages = {}
         self.curr_id = 0
-
+        self.stage_id = 0
 # stage 2: diagrama de polos y ceros
 
     @staticmethod
@@ -27,7 +28,7 @@ class Model:
                  "Group delay", "Q values", "Pole-zero map"])
 
     def get_plot(self, filter_id, plot_name, norm):
-        if norm:
+        if int(norm):
             plot_type = 2
         else:
             plot_type = 1
@@ -83,7 +84,7 @@ class Model:
         tf = tf.to_tf()
 
         [w, y, y2] = signal.bode(system=tf, n=1000)
-        plots["Bode diagram - magnitude"] = [ContinuousPlotData(x_label="Frequency", x_units="rad/s",
+        plots["Bode diagram - attenuation"] = [ContinuousPlotData(x_label="Frequency", x_units="rad/s",
                                         y_label="Attenuation", y_units="dB",  x_data=w, y_data=(-1)*y,
                                         logscale=True, dB=True)]
         plots["Bode diagram - phase"] = [ContinuousPlotData(x_label="Frequency", x_units="rad/s",
@@ -124,103 +125,20 @@ class Model:
         if template.template_type == "Group delay":
             plots["Group delay"].append(template.get_plot())
         else:
-            plots["Bode diagram - magnitude"].append(template.get_plot())
+            plots["Bode diagram - attenuation"].append(template.get_plot())
+
+    def auto_stages(self, filter_id):
+        f = self.filters[filter_id]
+        stages = f.auto_stage_decomposition()
+        self.stage_id += 1
+        plots = f.get_auto
+        self.stages[self.stage_id] = [filter_id, stages, plots]
+        #self.get_stages_plot()
+
+
 
     def get_filter_pzplot(self, filter_id):
         return self.filters[filter_id][1]["Pole-zero map"]
-
-    #stage_id
-    def delete_stage(self, filter_id, stage_id):
-        f = self.filters[filter_id]
-        f.delete_stage(f.stages[int(stage_id)-1])
-
-    def auto_stages(self, filter_id, vout_min, vout_max):
-        f= self.filters[filter_id]
-        f.auto_stage_decomposition(float(vout_min), float(vout_max))
-
-    def get_auto_stages_plots(self, filter_id):
-        stages = self.filters[filter_id].stages
-
-        st_plots = []
-        for stage in stages:
-            tf = signal.ZerosPolesGain(stage.zeros, stage.poles, stage.gain_factor)
-            tf = tf.to_tf()
-
-            [w, y, y2] = signal.bode(system=tf, n=1000)
-            st_plots.append(ContinuousPlotData(x_label="Frequency", x_units="rad/s",  y_label="Attenuation", y_units="dB", x_data=w,
-                                                y_data=(-1) * y, logscale=True, dB=True))
-        return st_plots
-
-    # llamar a esta INMEDIATAMENTE despues de get_auto_stages_plots
-    def get_auto_stage_p_strings(self, filter_id, stage_id):
-        stages = self.filters[filter_id].stages
-        poles = stages[int(stage_id)-1].poles
-        filter.Filter.re_add_complex(poles)
-        p_strings = []
-        for pole in poles:
-            p_strings.append(str(pole))
-        filter.Filter.add_only_one_complex(poles)
-        return p_strings
-
-    def get_auto_stage_z_strings(self, filter_id, stage_id):
-        stages = self.filters[filter_id].stages
-        zeros = stages[int(stage_id)-1].zeros
-        filter.Filter.re_add_complex(zeros)
-        z_strings = []
-        for zero in zeros:
-            z_strings.append(str(zero))
-        filter.Filter.add_only_one_complex(zeros)
-        return z_strings
-
-    def get_auto_stages_k(self, filter_id, stage_id):
-        return str(self.filters[filter_id].stages[int(stage_id)-1].gain_factor)
-
-    def single_stage(self, filter_id, poles, zeros, gain_factor, vout_min, vout_max):
-        f = self.filters[filter_id]
-        polos = []
-        ceros = []
-        ganancia = 0
-        for pole in poles:
-            polos.append(float(pole))
-        for zero in zeros:
-            ceros.append(float(zero))
-        ganancia = float(gain_factor)
-        vout_min = float(vout_min)
-        vout_max = float(vout_max)
-
-        f.single_stage_decomposition(poles, zeros, gain_factor, vout_min, vout_max)
-
-    def single_stage_plots(self, filter_id):
-        stages = self.filters[filter_id].stages
-        st_plots = []
-        for stage in stages:
-            tf = signal.ZerosPolesGain(stage.zeros, stage.poles, stage.gain_factor)
-            tf = tf.to_tf()
-
-            [w, y, y2] = signal.bode(system=tf, n=1000)
-            st_plots.append(ContinuousPlotData(x_label="Frequency", x_units="rad/s",  y_label="Attenuation", y_units="dB", x_data=w,
-                                                y_data=(-1) * y, logscale=True, dB=True))
-        return st_plots
-
-    def single_stage_pzk_strings(self, filter_id, stage_id):
-        stage = self.filters[filter_id].stages[int(stage_id)-1]
-        polos = []
-        ceros = []
-        ganancia = 0
-        for pole in stage.poles:
-            polos.append(str(pole))
-        for zero in stage.zeros:
-            ceros.append(str(zero))
-        ganancia = str(stage.gain_factor)
-
-        return polos, ceros, ganancia
-
-    def get_stage_info(self, filter_id, stage_id):
-        stages = self.filters[filter_id].stages
-        infos = []
-        for info in stages[stage_id-1].get_display_info():
-            infos.append(str(info))
-        return infos
 
     def get_pzk_strings(self, filter_id):
         f = self.filters[filter_id]

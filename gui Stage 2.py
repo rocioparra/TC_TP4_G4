@@ -46,6 +46,8 @@ class TCExample:
         Label(vmin_frame, text="V minimo").pack(side = RIGHT)
         Label(vmax_frame, text="V maximo").pack(side = RIGHT)
 
+        self.set_data_button = Button(stages_data_frame, text = "Set data", command = self.set_data)
+
     def populate_stages_plot_control_frame(self, stages_plot_control_frame):
         self.plot_mode_list = ["Individual", "Acumulative"]
         self.plot_mode = StringVar()
@@ -99,9 +101,9 @@ class TCExample:
         auxFrame = Frame(pole_zero_frame)
         auxFrame.pack(side = TOP)
 
-        self.pole_menu = Listbox(auxFrame)
+        self.pole_menu = Listbox(auxFrame, exportselection=False)
         self.pole_menu.pack(side = LEFT)
-        self.zero_menu = Listbox(auxFrame)
+        self.zero_menu = Listbox(auxFrame, exportselection=False)
         self.zero_menu.pack(side = RIGHT)
 
 
@@ -153,14 +155,25 @@ class TCExample:
         print("automatic_stages_cb")
         #add_stage
 
+    def set_data(self):
+        print("G = ", self.gain.get(), ", Vmin = ", self.vmin.get(), ", Vmax = ", self.vmax.get())
+        # self.gain = StringVar()
+        # self.vmin = StringVar()
+        # self.vmax = StringVar()
+
     def __init__(self):
+
         self.root = Tk()
         self.root.title("Tc Example")
 
-        self.stages_list = []   #todas las stages ya armadas
+        #set_filter
+
+        # todo: obtener de Tomi:
         self.poles_list = []
         self.zeros_list = []
 
+
+        self.stages_list = []
         self.stages_overview_subframes = []
         self.stages_overview_is_selected = []
         self.stages_overview_scroll_offset = 0

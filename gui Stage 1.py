@@ -8,6 +8,7 @@ from matplotlib.figure import Figure
 from tkinter import *
 from model import Model
 from filter_template import TemplateParameters
+import math
 
 
 class TCExample:
@@ -18,18 +19,29 @@ class TCExample:
 
 
     def plot(self):
-        result = {
-            'Mag': lambda: self.plotMag(),
-            'Ate': lambda: self.plotAte(),
-            'Pha': lambda: self.plotPha(),
-            'Pha ret': lambda:self.plotPhaRet(),
-            'PZ': lambda: self.plotPZ(),
-            'Step': lambda: self.plotStep(),
-            'Imp': lambda: self.plotImp()
-        }[self.current_plot]
+        self.axis.clear()
+        for filter in self.filters_input:
+            plots = self.m.get_plot(filter[2], self.current_plot.get(), self.normalizacion.get() != "Desnormalizado")
+            for plot in plots:
+                self.axis.set_xlabel(plot.x_label + " (" + plot.x_units + ")")
+                self.axis.set_ylabel(plot.y_label + " (" + plot.y_units + ")")
+                if plot.plot_type == 'c':
+                    if plot.logscale:
+                        self.axis.semilogx(plot.x_data, plot.y_data)
+                    else:
+                        self.axis.plot(plot.x_data, plot.y_data)
+                if plot.plot_type == 's':
+                    pass
+
+        self.dataPlot.draw()
+
 
     def plotPha(self):
         print("plot pha")
+
+
+
+        self.m.get_plot()
         for current_filter_info in self.filters_input:
             if current_filter_info[0]:  #si esta seleccionada
                 print("imprimo fase del filtro ", current_filter_info[1].cget("text"))
@@ -124,13 +136,23 @@ class TCExample:
 
     def calculate_new_filter_cb(self):
         #todo
-        #mandar a perrochi y obtener el nuevo filtro
         #guardar el nombre y los plot para plotear en filters_list
         #guardar el checkbox (state=normal) en filter_input_list
         #plot t-odo de nuevo
 
-        #todo: calcular nmax y nmin para mandar
+        nmin = 0
+        nmax = 25
+        if self.n_options_name == "N min y max":
+            nmin = int(self.nmin_value.get())
+            nmax = int(self.nmin_value.get())
+        elif self.n_options_name == "N fijo":
+            nmin = int(self.nfijo_value.get())
+            nmax = int(self.nfijo_value.get())
 
+        #todo: Q en infinito si no hay nada
+        Qmax = 200
+        if len(self.qmax_value.get()):
+            Qmax = float(self.qmax_value.get())
 
         template_parameters_list = []
         for key in self.template_parameters_input:
@@ -142,21 +164,24 @@ class TCExample:
 
         template_parameters_list_to_send = TemplateParameters(*template_parameters_list)
 
-
-
-        self.m.add_filter(self.filter_type_name.get(), self.approximation_type_name.get(), \
-                          template_parameters_list_to_send, 0, 25, 4, 10 )
-        new_filter_input = []               #checkbutton y variable para ver si esta seleccionado o no
+        #todo:control de error
+        new_filter_input = []                #checkbutton y variable para ver si esta seleccionado o no
         new_filter_input.append(IntVar())    #guarda si esta seleccionado o no
-        new_filter_input.append(Checkbutton(self.existing_filters_frame, variable=new_filter_input[0], text="nuevo filtro re piola", state='normal'))
-        new_filter_input[1].pack(side = TOP, fill='x')
-#        new_filter_input.append() LA LISTA DE TODOS LOS GRAFICOS y el nombre grafico quizas
+
+        normal = 1
+        dn = self.normalizacion.get()
+        if(dn == "Desnormalizado"):
+            normal = 0
+
+        auxTup = self.m.add_filter(self.filter_type_name.get(), self.approximation_type_name.get(), \
+                          template_parameters_list_to_send, nmin, nmax, Qmax, normal)
+        new_filter_input.append(auxTup[0])
+        new_filter_input.append(auxTup[1])
+        new_filter_input.append(Checkbutton(self.existing_filters_frame, variable=new_filter_input[0], text=new_filter_input[1], state='normal'))
+        new_filter_input[3].pack(side = TOP, fill='x')
+
         self.filters_input.append(new_filter_input)
 
-    # def set_template_parmeters(self):
-    #     #todo: mandar a chiparra
-    #     for key, value in self.template_parameters_input:
-    #         print(key, value)
 
     def n_mode_cb(self, mode):
         if mode ==  "N libre":
@@ -192,7 +217,7 @@ class TCExample:
         self.filter_type_list = self.m.get_available_filters()
         self.approximation_type_list = ["Approximation type"]
 
-        self.existing_filters = []
+        self.existing_filters = []  #contiene tuples de filter_ID y nombre
 
         #------------------------------------------------------------------------
         # create a toplevel menu
@@ -260,8 +285,8 @@ class TCExample:
 
         #desnormalizacion con sliders
         desnorm_input = Frame(self.template_parameters_frame)
-        desnorm = StringVar()
-        desnorm_scale = Scale(desnorm_input, from_=0, to_=100, orient=HORIZONTAL)
+        self.desnorm = StringVar()
+        desnorm_scale = Scale(desnorm_input, from_=0, to_=100, orient=HORIZONTAL, variable = self.desnorm)
         desnorm_scale.pack(side = RIGHT)
         desnormLabel = Label(desnorm_input, text="Desnormalizacion")
         desnormLabel.pack(side=RIGHT, fill=X)
@@ -412,7 +437,7 @@ class TCExample:
         delete_filters_button = Button(toolbar, text="Borrar deseleccionados", command=self.delete_unselected_cb)
         delete_filters_button.pack(side=BOTTOM, fill='x')
 
-
+        Button(toolbar, text = "Plot", command = self.plot).pack()
 
 
 

@@ -57,9 +57,10 @@ class HighPass(filter.Filter):
         return TemplateParameters(wa=True, wp=True, alpha_a=True, alpha_p=True)
 
     def normalize(self):
+        param = TemplateParameters(wa=self.denormalized_template.wp/self.denormalized_template.wa, wp=1,
+                           alpha_p=self.denormalized_template.alpha_p, alpha_a=self.denormalized_template.alpha_a)
         self.normalized_template = \
-            LowPassTemplate(param=[1, self.denormalized_template.wp / self.denormalized_template.wa,
-                                   self.denormalized_template.alpha_p, self.denormalized_template.alpha_a],
+            LowPassTemplate(param=param,
                             n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
                             q_max=self.denormalized_template.q_max,
                             denorm_degree=self.denormalized_template.denorm_degree)
@@ -101,8 +102,12 @@ class BandPass(filter.Filter):
 
     def normalize(self):
         wa_norm = self.denormalized_template.bw_a/self.denormalized_template.bw_p
+        param = TemplateParameters(wa=wa_norm, wp=1,
+                                   alpha_p=self.denormalized_template.alpha_p,
+                                   alpha_a=self.denormalized_template.alpha_a)
+
         self.normalized_template = \
-            LowPassTemplate(param=[1, wa_norm, self.denormalized_template.alpha_p, self.denormalized_template.alpha_a],
+            LowPassTemplate(param=param,
                             n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
                             q_max=self.denormalized_template.q_max,
                             denorm_degree=self.denormalized_template.denorm_degree)
@@ -154,8 +159,12 @@ class BandReject(filter.Filter):
 
     def normalize(self):
         wa_norm = self.denormalized_template.bw_p / self.denormalized_template.bw_a
+        param = TemplateParameters(wa=wa_norm, wp=1,
+                                   alpha_p=self.denormalized_template.alpha_p,
+                                   alpha_a=self.denormalized_template.alpha_a)
+
         self.normalized_template = \
-            LowPassTemplate(param=[1, wa_norm, self.denormalized_template.alpha_p, self.denormalized_template.alpha_a],
+            LowPassTemplate(param=param,
                             n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
                             q_max=self.denormalized_template.q_max,
                             denorm_degree=self.denormalized_template.denorm_degree)
@@ -212,11 +221,9 @@ class GroupDelay(filter.Filter):
         return TemplateParameters(wrg=True, tau=True, tol=True)
 
     def normalize(self):
-        wrgn = self.denormalized_template.wrg * self.denormalized_template.tau
-        self.normalized_template = \
-            GroupDelayTemplate(param=[wrgn, 1, self.denormalized_template.tol],
-                               n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
-                               q_max=self.denormalized_template.q_max)
+        self.normalized_template = self.denormalized_template
+        self.normalized_template.wrg = self.denormalized_template.wrg * self.denormalized_template.tau
+        self.normalized_template.tau = 1
 
     def denormalize_one_pole(self, pole):
         self.denormalized_k /= self.denormalized_template.tau

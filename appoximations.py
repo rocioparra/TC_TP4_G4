@@ -159,7 +159,7 @@ class Bessel(Approximation):
     def meets_template(template, n):
         b = Bessel.get_poly(n)
         poles = poly.polyroots(c=b.coef)
-        gd = group_delay(w=[template.w_rg], p=poles, z=[])
+        [gd, _] = group_delay(w=[template.wrg], p=poles, z=[])
         if gd[0] >= 1-template.tol:
             return True
         else:
