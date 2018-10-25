@@ -6,6 +6,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends._backend_tk import NavigationToolbar2Tk
 from matplotlib.figure import Figure
 from tkinter import *
+from model import Model
 
 
 class TCExample:
@@ -104,10 +105,17 @@ class TCExample:
 
     def set_filter_type(self):
         print(self.filter_type_name.get())
-        #todo: mandar a perrochi y obtener cuales muestro
-        for key in self.template_parameters_input:
-            self.template_parameters_input[key][2].config(state='normal')
-            print(key, self.template_parameters_input[key])
+        self.approximation_type_list =  self.m.get_approximations_for(self.filter_type_name.get())
+        self.approximation_type_menu.destroy()
+        self.approximation_type_menu = OptionMenu(self.template_parameters_frame, self.approximation_type_name, *self.approximation_type_list)
+        self.approximation_type_menu.pack(side=TOP, fill="x")
+        auxlist = self.m.get_parameters_for(self.filter_type_name.get()).data
+        for i in range(len(self.template_parameters_input)):
+            if auxlist[i]:
+                list(self.template_parameters_input.values())[i][2].config(state='normal')
+            else:
+                list(self.template_parameters_input.values())[i][2].config(state='disabled')
+
 
     def calculate_new_filter_cb(self):
         #todo
@@ -156,10 +164,12 @@ class TCExample:
         self.root = Tk()
         self.root.title("Tc Example")
 
+        self.m = Model()
+
 
         #todo: obtener de chiparra
-        self.filter_type_list = ["Low-pass", "High-pass", "Band-pass", "Band-reject", "Lo de la fase"]
-        self.approximation_type_list = ["Chevy 1", "Chevy 2", "Cauer", "Bessel"]
+        self.filter_type_list = self.m.get_available_filters()
+        self.approximation_type_list = ["Approximation type"]
 
         self.existing_filters = []
 
@@ -198,13 +208,9 @@ class TCExample:
         #------------------------------------------------------------------------
         #Frame plantilla---------------------------------------------------------
         #------------------------------------------------------------------------
-        template_parameters_frame = LabelFrame(user_input_frame, text = "Plantilla", width = 20, height = 15)
-        template_parameters_frame.pack(side = TOP, fill = "x")
+        self.template_parameters_frame = LabelFrame(user_input_frame, text = "Plantilla", width = 20, height = 15)
+        self.template_parameters_frame.pack(side = TOP, fill = "x")
 
-        approximation_type_name = StringVar()
-        approximation_type_name.set("Approximation type")  # default value
-        filter_type_menu = OptionMenu(template_parameters_frame, approximation_type_name, *self.approximation_type_list)
-        filter_type_menu.pack(side=TOP, fill="x")
 
 
         #todos los parametros para el template
@@ -213,6 +219,7 @@ class TCExample:
             "wp": [],
             "Aa": [],
             "Ap": [],
+            "w0": [],
             "BWp": [],
             "BWa": [],
             "tau": [],
@@ -223,7 +230,7 @@ class TCExample:
         #entries para los parametros del templates
         for key in self.template_parameters_input:
             self.template_parameters_input[key].append(StringVar())                           #template_parameters_input[key][0]
-            self.template_parameters_input[key].append(Frame(template_parameters_frame))      #template_parameters_input[key][1]
+            self.template_parameters_input[key].append(Frame(self.template_parameters_frame))      #template_parameters_input[key][1]
             self.template_parameters_input[key].append(Entry(self.template_parameters_input[key][1], width = 30, textvariable=self.template_parameters_input[key][0], state='disabled'))
             self.template_parameters_input[key][2].pack(side=RIGHT)
             Label(self.template_parameters_input[key][1], text=key).pack(side=RIGHT)
@@ -231,7 +238,7 @@ class TCExample:
 
 
         #desnormalizacion con sliders
-        desnorm_input = Frame(template_parameters_frame)
+        desnorm_input = Frame(self.template_parameters_frame)
         desnorm = StringVar()
         desnorm_scale = Scale(desnorm_input, from_=0, to_=100, orient=HORIZONTAL)
         desnorm_scale.pack(side = RIGHT)
@@ -241,7 +248,7 @@ class TCExample:
 
 
         #Qmax
-        qmax_input_frame = Frame(template_parameters_frame)
+        qmax_input_frame = Frame(self.template_parameters_frame)
         self.qmax_value = StringVar()
 
         qmax_label = Label(qmax_input_frame, text="Q max:")
@@ -257,11 +264,11 @@ class TCExample:
         self.n_options_name = StringVar()
         self.n_options_list = [ "N libre", "N min y max", "N fijo" ]
         self.n_options_name.set(self.n_options_list[0])
-        n_options_menu = OptionMenu(template_parameters_frame,self.n_options_name, *self.n_options_list, command=self.n_mode_cb)
+        n_options_menu = OptionMenu(self.template_parameters_frame,self.n_options_name, *self.n_options_list, command=self.n_mode_cb)
         n_options_menu.pack(side=TOP)
 
         #nmin y nmax
-        nmaxmin_input_frame = Frame(template_parameters_frame)
+        nmaxmin_input_frame = Frame(self.template_parameters_frame)
 
         self.nmax_value = StringVar()
         self.nmin_value = StringVar()
@@ -282,7 +289,7 @@ class TCExample:
 
 
         #n fijo
-        nfijo_input_frame = Frame(template_parameters_frame)
+        nfijo_input_frame = Frame(self.template_parameters_frame)
         self.nfijo_value = StringVar()
 
         nfijo_label = Label(nfijo_input_frame, text="N fijo:")
@@ -299,10 +306,14 @@ class TCExample:
 
 
 
+        self.approximation_type_name = StringVar()
+        self.approximation_type_name.set("Approximation type")  # default value
+        self.approximation_type_menu = OptionMenu(self.template_parameters_frame, self.approximation_type_name, *self.approximation_type_list)
+        self.approximation_type_menu.pack(side=TOP, fill="x")
 
 
-        template_parameters_set_button = Button(template_parameters_frame, text="Calculate new filter", command=self.calculate_new_filter_cb)
-        template_parameters_set_button.pack()
+        self.template_parameters_set_button = Button(user_input_frame, text="Calculate new filter", command=self.calculate_new_filter_cb)
+        self.template_parameters_set_button.pack()
 
 
 
