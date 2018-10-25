@@ -6,7 +6,7 @@ from filter_template import LowPassTemplate, BandPassTemplate
 m = Model()
 m.add_filter("Band-pass", "Inverse Chebyshev", [500, 100, 200, 1, 20], 1, 25, 100, 50)
 m.f.auto_stage_decomposition(.1, 15)
-
+print(m.f.normalized_poles)
 # template = LowPassTemplate([1, 1000, 2, 35], 1, 25, 100, 0)
 # n = min(Cauer.get_min_n(template), 25)
 # p, z, k = Cauer.pzk(25, template)

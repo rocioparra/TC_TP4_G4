@@ -113,7 +113,6 @@ class GroupDelayTemplate(FilterTemplate):
     def get_pass_bands(self):
         return [[0, self.w_rg]]
 
-
 class RectangularArea:
     def __init__(self, top, bottom, left, right):
         self.top = top
