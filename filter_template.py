@@ -35,7 +35,7 @@ class LowPassTemplate(FilterTemplate):
     def get_plot(self):
         pass_band = RectangularArea(top=math.inf, bottom=self.alpha_p, left=0, right=self.wp)
         stop_band = RectangularArea(top=self.alpha_a, bottom=-math.inf, left=self.wa, right=math.inf)
-        return TemplatePlotData(title="Bode diagram - magnitude", x_label="Frequency", x_units="rad/s",
+        return TemplatePlotData(x_label="Frequency", x_units="rad/s",
                                 y_label="Attenuation", y_units="dB", logscale=True, dB=True,
                                 covered_areas=[pass_band, stop_band])
 
@@ -51,7 +51,7 @@ class HighPassTemplate(FilterTemplate):
     def get_plot(self):
         pass_band = RectangularArea(top=math.inf, bottom=self.alpha_p, left=self.wp, right=math.inf)
         stop_band = RectangularArea(top=-math.inf, bottom=self.alpha_a, left=0, right=self.wa)
-        return TemplatePlotData(title="Bode diagram - magnitude", x_label="Frequency", x_units="rad/s",
+        return TemplatePlotData(x_label="Frequency", x_units="rad/s",
                                 y_label="Attenuation", y_units="dB", logscale=True, dB=True,
                                 covered_areas=[pass_band, stop_band])
 
@@ -76,7 +76,7 @@ class BandPassTemplate(FilterTemplate):
         pass_band = RectangularArea(top=self.alpha_p, bottom=-math.inf, left=self.wp_minus, right=self.wp_plus)
         stop_high = RectangularArea(top=math.inf, bottom=self.alpha_a, left=self.wa_plus, right=math.inf)
 
-        return TemplatePlotData(title="Bode diagram - magnitude", x_label="Frequency", x_units="rad/s",
+        return TemplatePlotData(x_label="Frequency", x_units="rad/s",
                                 y_label="Attenuation", y_units="dB", logscale=True, dB=True,
                                 covered_areas=[stop_low, pass_band, stop_high])
 
@@ -100,7 +100,7 @@ class BandRejectTemplate(FilterTemplate):
         stop_band = RectangularArea(top=math.inf, bottom=self.alpha_a,  left=self.wa_minus, right=self.wa_plus)
         pass_high = RectangularArea(top=self.alpha_p, bottom=-math.inf, left=self.wp_plus, right=math.inf)
 
-        return TemplatePlotData(title="Bode diagram - magnitude", x_label="Frequency", x_units="rad/s",
+        return TemplatePlotData(x_label="Frequency", x_units="rad/s",
                                 y_label="Attenuation", y_units="dB", logscale=True, dB=True,
                                 covered_areas=[pass_low, stop_band, pass_high])
 
@@ -115,9 +115,10 @@ class GroupDelayTemplate(FilterTemplate):
 
     def get_plot(self):
         min_tau = RectangularArea(top=self.tau*(1-self.tol), bottom=-math.inf, left=-math.inf, right=self.w_rg)
-        return TemplatePlotData(title="Bode diagram - magnitude", x_label="Frequency", x_units="rad/s",
+        return TemplatePlotData(x_label="Frequency", x_units="rad/s",
                                 y_label="Attenuation", y_units="dB", logscale=True, dB=True,
                                 covered_areas=[min_tau])
+
     def get_pass_bands(self):
         return [[0, self.w_rg]]
 

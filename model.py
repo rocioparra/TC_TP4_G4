@@ -16,9 +16,21 @@ class Model:
             "Band-reject":  [filtertypes.BandReject, filter_template.BandRejectTemplate],
             "Group delay":  [filtertypes.GroupDelay, filter_template.GroupDelayTemplate]
         }
-        self.f = None
-        self.norm_plots = []
-        self.plots = []
+        self.filters = {}
+        self.curr_id = 0
+
+    @staticmethod
+    def get_available_plots():
+        return (["Bode diagram - attenuation", "Bode diagram - phase", "Step response", "Impulse response",
+                 "Group delay", "Q values", "Pole-zero map"])
+
+    def get_plot(self, filter_id, plot_name, norm):
+        if norm:
+            plot_type = 2
+        else:
+            plot_type = 1
+
+        return self.filters[filter_id][plot_type][plot_name]
 
     def get_available_filters(self):
         return list(self.filter_dict.keys())
@@ -31,9 +43,15 @@ class Model:
 
     def add_filter(self, filter_type, approx, param, n_min, n_max, q_max, denorm_degree):
         template = (self.filter_dict.get(filter_type)[1])(param, n_min, n_max, q_max, denorm_degree)
-        self.f = (self.filter_dict.get(filter_type)[0])(template, approx)
-        self.f.calculate_pzkn()
-        self.get_filter_plots(self.f, self.plots, self.norm_plots)
+        f = (self.filter_dict.get(filter_type)[0])(template, approx)
+        f.calculate_pzkn()
+        plots = {}
+        norm_plots = {}
+        self.get_filter_plots(f, plots, norm_plots)
+        self.curr_id += 1
+        self.filters[self.curr_id] = [f, plots, norm_plots]
+
+        return f.type + " " + f.approx + " order " + str(f.n), self.curr_id
 
     @staticmethod
     def get_filter_plots(f, plots, norm_plots):
@@ -58,22 +76,22 @@ class Model:
         tf = tf.to_tf()
 
         [w, y, y2] = signal.bode(system=tf, n=1000)
-        plots.append(ContinuousPlotData(title="Bode diagram - magnitude", x_label="Frequency", x_units="rad/s",
+        plots["Bode diagram - magnitude"] = [ContinuousPlotData(x_label="Frequency", x_units="rad/s",
                                         y_label="Attenuation", y_units="dB",  x_data=w, y_data=(-1)*y,
-                                        logscale=True, dB=True))
-        plots.append(ContinuousPlotData(title="Bode diagram - phase", x_label="Frequency", x_units="rad/s",
-                                        y_label="Phase", y_units="(°)", x_data=w, y_data=y2, dB=False, logscale=True))
+                                        logscale=True, dB=True)]
+        plots["Bode diagram - phase"] = [ContinuousPlotData(x_label="Frequency", x_units="rad/s",
+                                        y_label="Phase", y_units="(°)", x_data=w, y_data=y2, dB=False, logscale=True)]
 
         [x, y] = signal.step(tf, N=1000)
-        plots.append(ContinuousPlotData(title="Step response", x_label="Time", x_units="s",
+        plots["Step response"] = [ContinuousPlotData(x_label="Time", x_units="s",
                                         y_label="Amplitude", y_units="dimensionless", logscale=False, dB=False,
-                                        x_data=x, y_data=y))
+                                        x_data=x, y_data=y)]
 
         [x, y] = signal.impulse(tf, N=1000)
-        plots.append(ContinuousPlotData(title="Impulse response", x_label="Time", x_units="s",
+        plots["Impulse response"] = [ContinuousPlotData(x_label="Time", x_units="s",
                                         y_label="Amplitude", y_units="dimensionless", logscale=False, dB=False,
-                                        x_data=x, y_data=y))
-        plots.append(Model.get_pzplot(p, z))
+                                        x_data=x, y_data=y)]
+        plots["Pole-zero map"] = [Model.get_pzplot(p, z)]
 
         [gd_points, gd_deltas] = group_delay(w, p, z)
         delta_points = []
@@ -85,18 +103,21 @@ class Model:
             d.legend = str(delta[1])
             delta_points.append(d)
 
-        plots.append(ContinuousPlotData(title="Group delay", x_label="Frequency", x_units="rad/s", y_label="Delay",
-                                        y_units="s", logscale=True, dB=False, x_data=w, y_data=gd_points))
-        plots.append(ScatterPlotData(title="Group delay",  x_label="Frequency", x_units="rad/s", y_label="Delay",
+        plots["Group delay"] = [ContinuousPlotData(x_label="Frequency", x_units="rad/s", y_label="Delay",
+                                        y_units="s", logscale=True, dB=False, x_data=w, y_data=gd_points)]
+        plots["Group delay"].append(ScatterPlotData(x_label="Frequency", x_units="rad/s", y_label="Delay",
                                      y_units="s", logscale=True, dB=False, points=delta_points))
 
         q = []
         Model.get_q_points(p, q)
         Model.get_q_points(z, q)
-        plots.append(ScatterPlotData(title="Q values", x_label="", x_units="", y_label="Q", y_units="dimensionless",
-                                     logscale=False, dB=False, points=q))
+        plots["Q values"] = [ScatterPlotData(x_label="", x_units="", y_label="Q", y_units="dimensionless",
+                                     logscale=False, dB=False, points=q)]
 
-        plots.append(template.get_plot())
+        if template.template_type == "Group delay":
+            plots["Group delay"].append(template.get_plot())
+        else:
+            plots["Bode diagram - magnitude"].append(template.get_plot())
 
     @staticmethod
     def get_pzplot(p, z):
@@ -107,7 +128,7 @@ class Model:
         filter.Filter.re_add_complex(z)
 
         points = pole_points + zero_points
-        return ScatterPlotData(title="Pole-zero map", x_label="Real", x_units="rad/s", y_label="Imaginary",
+        return ScatterPlotData(x_label="Real", x_units="rad/s", y_label="Imaginary",
                                y_units="rad/s", logscale=False, dB=False, points=points)
 
     @staticmethod

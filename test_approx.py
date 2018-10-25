@@ -4,8 +4,11 @@ from matplotlib import pyplot as plt
 from filter_template import LowPassTemplate, BandPassTemplate
 
 m = Model()
-m.add_filter("Band-pass", "Inverse Chebyshev", [500, 100, 200, 1, 20], 1, 25, 100, 50)
-m.f.auto_stage_decomposition(.1, 15)
+s, id = m.add_filter("Band-pass", "Inverse Chebyshev", [500, 100, 200, 1, 20], 1, 25, 100, 50)
+#m.f.auto_stage_decomposition(.1, 15)
+print(s)
+m.get_plot(id, "Step response", False)
+
 
 # template = LowPassTemplate([1, 1000, 2, 35], 1, 25, 100, 0)
 # n = min(Cauer.get_min_n(template), 25)
