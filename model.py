@@ -121,12 +121,40 @@ class Model:
         else:
             plots["Bode diagram - magnitude"].append(template.get_plot())
 
-    def auto_stages(self, filter_id):
-        f = self.filters[filter_id]
-        f.auto_stage_decomposition()
-
     def get_filter_pzplot(self, filter_id):
         return self.filters[filter_id][1]["Pole-zero map"]
+
+    #llamar a esta INMEDIATAMENTE despues de get_auto_stages_plots
+    def get_auto_stages_pzk_strings(self, filter_id, vout_min, vout_max):
+        stages = self.filters[filter_id].stages
+        pzk_strings = [[]]
+        for stage in stages:
+            pzk_strings.append([str(stage.poles), str(stage.zeros), str(stage.gain_factor)])
+
+        return pzk_strings
+    #stage_id
+    def delete_stage(self, filter_id, stage_id):
+        f = self.filters[filter_id]
+        f.delete_stage(f.stages[stage_id])
+
+    def get_auto_stages_plots(self, filter_id, vout_min, vout_max):
+        f = self.filters[filter_id]
+        stages = f.auto_stage_decomposition(float(vout_min), float(vout_max))
+
+        st_plots = []
+        for stage in stages:
+            tf = signal.ZerosPolesGain(stage.zeros, stage.poles, stage.gain_factor)
+            tf = tf.to_tf()
+
+            [w, y, y2] = signal.bode(system=tf, n=1000)
+            st_plots.append(ContinuousPlotData(x_label="Frequency", x_units="rad/s",  y_label="Attenuation", y_units="dB", x_data=w,
+                                                y_data=(-1) * y, logscale=True, dB=True))
+        return st_plots
+
+    def singe_stage_plot(self, filter_id, poles, zeros, gain_factor, vout_min, vout_max):
+        f = self.filters[filter_id]
+        stages = f.single_stage_decomposition(self, complex(poles[0]), complex(zeros[0]), float(gain_factor), vout_min, vout_max)
+
 
     def get_pzk_strings(self, filter_id):
         f = self.filters[filter_id]
