@@ -16,7 +16,7 @@ class LowPass(filter.Filter):
 
     @staticmethod
     def get_parameter_list():
-        return TemplateParameters(wa=True, wp=True, Aa=True, Ap=True)
+        return TemplateParameters(wa=True, wp=True, alpha_a=True, alpha_p=True)
 
     def normalize(self):
         self.normalized_template = self.denormalized_template
@@ -54,7 +54,7 @@ class HighPass(filter.Filter):
 
     @staticmethod
     def get_parameter_list():
-        return TemplateParameters(wa=True, wp=True, Aa=True, Ap=True)
+        return TemplateParameters(wa=True, wp=True, alpha_a=True, alpha_p=True)
 
     def normalize(self):
         self.normalized_template = \
@@ -97,7 +97,7 @@ class BandPass(filter.Filter):
 
     @staticmethod
     def get_parameter_list():
-        return TemplateParameters(w0=True, BWp=True, BWa=True, Aa=True, Ap=True)
+        return TemplateParameters(w0=True, bw_p=True, bw_a=True, alpha_a=True, alpha_p=True)
 
     def normalize(self):
         wa_norm = self.denormalized_template.bw_a/self.denormalized_template.bw_p
@@ -150,7 +150,7 @@ class BandReject(filter.Filter):
 
     @staticmethod
     def get_parameter_list():
-        return TemplateParameters(w0=True, BWp=True, BWa=True, Aa=True, Ap=True)
+        return TemplateParameters(w0=True, bw_p=True, bw_a=True, alpha_a=True, alpha_p=True)
 
     def normalize(self):
         wa_norm = self.denormalized_template.bw_p / self.denormalized_template.bw_a
@@ -210,7 +210,7 @@ class GroupDelay(filter.Filter):
 
     @staticmethod
     def get_parameter_list():
-        return TemplateParameters(wrg=True, tau=True, tol=True)
+        return TemplateParameters(w_rg=True, tau=True, tol=True)
 
     def normalize(self):
         w_rgn = self.denormalized_template.w_rg * self.denormalized_template.tau
