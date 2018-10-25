@@ -7,12 +7,15 @@ from matplotlib.backends._backend_tk import NavigationToolbar2Tk
 from matplotlib.figure import Figure
 from tkinter import *
 from model import Model
+from filter_template import TemplateParameters
 
 
 class TCExample:
 
     def show_credits(self):
         messagebox.showinfo("Credits", "La sororidad 2018")
+
+
 
     def plot(self):
         result = {
@@ -109,13 +112,15 @@ class TCExample:
         self.approximation_type_menu.destroy()
         self.approximation_type_menu = OptionMenu(self.template_parameters_frame, self.approximation_type_name, *self.approximation_type_list)
         self.approximation_type_menu.pack(side=TOP, fill="x")
-        auxlist = self.m.get_parameters_for(self.filter_type_name.get()).data
+
+        self.qmax_input.config(state='normal')
+
+        self.template_parameters_needed = self.m.get_parameters_for(self.filter_type_name.get()).data
         for i in range(len(self.template_parameters_input)):
-            if auxlist[i]:
+            if self.template_parameters_needed[i]:
                 list(self.template_parameters_input.values())[i][2].config(state='normal')
             else:
                 list(self.template_parameters_input.values())[i][2].config(state='disabled')
-
 
     def calculate_new_filter_cb(self):
         #todo
@@ -123,17 +128,35 @@ class TCExample:
         #guardar el nombre y los plot para plotear en filters_list
         #guardar el checkbox (state=normal) en filter_input_list
         #plot t-odo de nuevo
-        new_filter_input = []
+
+        #todo: calcular nmax y nmin para mandar
+
+
+        template_parameters_list = []
+        for key in self.template_parameters_input:
+            if self.template_parameters_input[key][0].get():
+                template_parameters_list.append(int(self.template_parameters_input[key][0].get()))
+            else:
+                template_parameters_list.append(None)
+            print(self.template_parameters_input[key][0].get())
+
+        template_parameters_list_to_send = TemplateParameters(*template_parameters_list)
+
+
+
+        self.m.add_filter(self.filter_type_name.get(), self.approximation_type_name.get(), \
+                          template_parameters_list_to_send, 0, 25, 4, 10 )
+        new_filter_input = []               #checkbutton y variable para ver si esta seleccionado o no
         new_filter_input.append(IntVar())    #guarda si esta seleccionado o no
         new_filter_input.append(Checkbutton(self.existing_filters_frame, variable=new_filter_input[0], text="nuevo filtro re piola", state='normal'))
         new_filter_input[1].pack(side = TOP, fill='x')
 #        new_filter_input.append() LA LISTA DE TODOS LOS GRAFICOS y el nombre grafico quizas
         self.filters_input.append(new_filter_input)
 
-    def set_template_parmeters(self):
-        #todo: mandar a chiparra
-        for key, value in self.template_parameters_input:
-            print(key, value)
+    # def set_template_parmeters(self):
+    #     #todo: mandar a chiparra
+    #     for key, value in self.template_parameters_input:
+    #         print(key, value)
 
     def n_mode_cb(self, mode):
         if mode ==  "N libre":
@@ -166,8 +189,6 @@ class TCExample:
 
         self.m = Model()
 
-
-        #todo: obtener de chiparra
         self.filter_type_list = self.m.get_available_filters()
         self.approximation_type_list = ["Approximation type"]
 
@@ -229,8 +250,8 @@ class TCExample:
 
         #entries para los parametros del templates
         for key in self.template_parameters_input:
-            self.template_parameters_input[key].append(StringVar())                           #template_parameters_input[key][0]
-            self.template_parameters_input[key].append(Frame(self.template_parameters_frame))      #template_parameters_input[key][1]
+            self.template_parameters_input[key].append(StringVar())                                 #template_parameters_input[key][0]
+            self.template_parameters_input[key].append(Frame(self.template_parameters_frame))       #template_parameters_input[key][1]
             self.template_parameters_input[key].append(Entry(self.template_parameters_input[key][1], width = 30, textvariable=self.template_parameters_input[key][0], state='disabled'))
             self.template_parameters_input[key][2].pack(side=RIGHT)
             Label(self.template_parameters_input[key][1], text=key).pack(side=RIGHT)
@@ -252,10 +273,10 @@ class TCExample:
         self.qmax_value = StringVar()
 
         qmax_label = Label(qmax_input_frame, text="Q max:")
-        qmax_input = Entry(qmax_input_frame, textvariable=self.qmax_value, width=5, state='disabled')
+        self.qmax_input = Entry(qmax_input_frame, textvariable=self.qmax_value, width=5, state='disabled')
 
         qmax_label.pack(side=LEFT)
-        qmax_input.pack(side=LEFT)
+        self.qmax_input.pack(side=LEFT)
 
         qmax_input_frame.pack(side=TOP, pady = 2)
 
@@ -356,7 +377,7 @@ class TCExample:
         self.normalizacion_list = ["Desnormalizado", "Normalizado"]
         self.unidades_list = ["Hz", "rad/s"]
         self.db_veces_list = ["dB", "Veces"]
-        self.current_plot_list = ["Atenuacion", "Magnitud", "Fase", "Retardo de grupo", "Maximo Q", "Respuesta al impulso", "Respuesta al escalon", "Polos y ceros"]
+        self.current_plot_list = self.m.get_available_plots()
 
         #valores default
         self.normalizacion.set(self.normalizacion_list[0])
