@@ -4,7 +4,7 @@ from plot_data import TemplatePlotData
 
 
 class TemplateParameters:
-    def __init__(self, wa=False, wp=False, Aa=False, Ap=False, w0=False, BWp=False, BWa=False, tau=False, tol=False, wrg=False):
+    def __init__(self, wa=False, wp=False, alpha_a=False, alpha_p=False, w0=False, bw_p=False, bw_a=False, tau=False, tol=False, w_rg=False):
         self.data = [wa, wp, alpha_a, alpha_p, w0, bw_p, bw_a, tau, tol, w_rg]
         [self.wa, self.wp, self.Aa, self.Ap, self.w0, self.BWp, self.BWa, self.tau, self.tol, self.wrg] = \
             [wa, wp, Aa, Ap, w0, wp, BWa, tau, tol, wrg]
