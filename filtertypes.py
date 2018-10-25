@@ -16,7 +16,7 @@ class LowPass(filter.Filter):
 
     @staticmethod
     def get_parameter_list():
-        return TemplateParameters(wa=True, wp=True, Aa=True, Ap=True)
+        return TemplateParameters(wa=True, wp=True, alpha_a=True, alpha_p=True)
 
     def normalize(self):
         self.normalized_template = self.denormalized_template
@@ -54,7 +54,7 @@ class HighPass(filter.Filter):
 
     @staticmethod
     def get_parameter_list():
-        return TemplateParameters(wa=True, wp=True, Aa=True, Ap=True)
+        return TemplateParameters(wa=True, wp=True, alpha_a=True, alpha_p=True)
 
     def normalize(self):
         self.normalized_template = \
@@ -97,7 +97,7 @@ class BandPass(filter.Filter):
 
     @staticmethod
     def get_parameter_list():
-        return TemplateParameters(w0=True, BWp=True, BWa=True, Aa=True, Ap=True)
+        return TemplateParameters(w0=True, bw_p=True, bw_a=True, alpha_a=True, alpha_p=True)
 
     def normalize(self):
         wa_norm = self.denormalized_template.bw_a/self.denormalized_template.bw_p
@@ -150,7 +150,7 @@ class BandReject(filter.Filter):
 
     @staticmethod
     def get_parameter_list():
-        return TemplateParameters(w0=True, BWp=True, BWa=True, Aa=True, Ap=True)
+        return TemplateParameters(w0=True, bw_p=True, bw_a=True, alpha_a=True, alpha_p=True)
 
     def normalize(self):
         wa_norm = self.denormalized_template.bw_p / self.denormalized_template.bw_a
@@ -199,7 +199,6 @@ class BandReject(filter.Filter):
 
 
 class GroupDelay(filter.Filter):
-    # params = [w_rg, tau, tolerance]
     def __init__(self, template, approx):
         super().__init__(filter_type="Group delay", approx=approx)
         self.denormalized_template = template
@@ -213,9 +212,9 @@ class GroupDelay(filter.Filter):
         return TemplateParameters(wrg=True, tau=True, tol=True)
 
     def normalize(self):
-        w_rgn = self.denormalized_template.w_rg * self.denormalized_template.tau
+        wrgn = self.denormalized_template.wrg * self.denormalized_template.tau
         self.normalized_template = \
-            GroupDelayTemplate(param=[w_rgn, 1, self.denormalized_template.tolerance],
+            GroupDelayTemplate(param=[wrgn, 1, self.denormalized_template.tol],
                                n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
                                q_max=self.denormalized_template.q_max)
 

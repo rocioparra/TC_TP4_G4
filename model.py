@@ -43,17 +43,22 @@ class Model:
     def get_approximations_for(self, filter_str):
         return (self.filter_dict.get(filter_str))[0].get_available_approximations()
 
-    def add_filter(self, filter_type, approx, param, n_min, n_max, q_max, denorm_degree):
+    def add_filter(self, filter_type, approx, param, n_min, n_max, q_max, denorm_degree=None):
         template = (self.filter_dict.get(filter_type)[1])(param, n_min, n_max, q_max, denorm_degree)
-        f = (self.filter_dict.get(filter_type)[0])(template, approx)
-        f.calculate_pzkn()
-        plots = {}
-        norm_plots = {}
-        self.get_filter_plots(f, plots, norm_plots)
-        self.curr_id += 1
-        self.filters[self.curr_id] = [f, plots, norm_plots]
 
-        return f.type + " " + f.approx + " order " + str(f.n), self.curr_id
+        if template.is_ok():
+            f = (self.filter_dict.get(filter_type)[0])(template, approx)
+            f.calculate_pzkn()
+
+            plots = {}
+            norm_plots = {}
+            self.get_filter_plots(f, plots, norm_plots)
+
+            self.curr_id += 1
+            self.filters[self.curr_id] = [f, plots, norm_plots]
+            return f.type + " " + f.approx + " order " + str(f.n), self.curr_id
+        else:
+            return "Error: parametros no validos", -1
 
     @staticmethod
     def get_filter_plots(f, plots, norm_plots):
