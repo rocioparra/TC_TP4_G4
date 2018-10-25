@@ -4,10 +4,10 @@ from plot_data import TemplatePlotData
 
 
 class TemplateParameters:
-    def __init__(self, wa=False, wp=False, alpha_a=False, alpha_p=False, w0=False, bw_p=False, bw_a=False, tau=False, tol=False, w_rg=False):
-        self.data = [wa, wp, alpha_a, alpha_p, w0, bw_p, bw_a, tau, tol, w_rg]
-        [self.wa, self.wp, self.alpha_a, self.alpha_p, self.w0, self.bw_p, self.bw_a, self.tau, self.tol, self.w_rg] = \
-            [wa, wp, alpha_a, alpha_p, w0, wp, bw_a, tau, tol, w_rg]
+    def __init__(self, wa=False, wp=False, Aa=False, Ap=False, w0=False, BWp=False, BWa=False, tau=False, tol=False, wrg=False):
+        self.data = [wa, wp, Aa, Ap, w0, BWp, BWa, tau, tol, wrg]
+        [self.wa, self.wp, self.Aa, self.Ap, self.w0, self.BWp, self.BWa, self.tau, self.tol, self.w_rg] = \
+            [wa, wp, Aa, Ap, w0, wp, BWa, tau, tol, wrg]
 
 
 class FilterTemplate(ABC):
@@ -21,6 +21,9 @@ class FilterTemplate(ABC):
     @abstractmethod
     def get_plot(self):
         pass
+
+    def is_ok(self):
+        return self.n_min < self.n_max < 26 and self.q_max > 0
 
     @abstractmethod
     def get_pass_bands(self):
@@ -42,6 +45,9 @@ class LowPassTemplate(FilterTemplate):
     def get_pass_bands(self):
         return [[0, self.wp]]
 
+    def is_ok(self):
+        return 0 < self.wp < self.wa and self.alpha_a > self.alpha_p and super().is_ok()
+
 
 class HighPassTemplate(FilterTemplate):
     def __init__(self, param, n_min, n_max, q_max, denorm_degree):
@@ -58,6 +64,8 @@ class HighPassTemplate(FilterTemplate):
     def get_pass_bands(self):
         return [[self.wp, math.inf]]
 
+    def is_ok(self):
+        return 0 < self.wa < self.wp and self.alpha_a > self.alpha_p and super().is_ok()
 
 
 class BandPassTemplate(FilterTemplate):
@@ -84,6 +92,9 @@ class BandPassTemplate(FilterTemplate):
     def get_pass_bands(self):
         return [[self.wp_minus, self.wp_plus]]
 
+    def is_ok(self):
+        return super().is_ok() and 0 < self.bw_p < self.bw_a and self.alpha_p < self.alpha_a
+
 
 class BandRejectTemplate(FilterTemplate):
     def __init__(self, param, n_min, n_max, q_max, denorm_degree):
@@ -109,20 +120,26 @@ class BandRejectTemplate(FilterTemplate):
     def get_pass_bands(self):
         return [[0, self.wp_minus], [self.wp_plus, math.inf]]
 
+    def is_ok(self):
+        return super().is_ok() and 0 < self.bw_a < self.bw_p and self.alpha_p < self.alpha_a
+
 
 class GroupDelayTemplate(FilterTemplate):
     def __init__(self, param, n_min, n_max, q_max):
         super().__init__("Group delay", n_min, n_max, q_max, denorm_degree=None)
-        [self.w_rg, self.tau, self.tol] = [param.w_rg, param.tau, param.tol]
+        [self.wrg, self.tau, self.tol] = [param.wrg, param.tau, param.tol]
 
     def get_plot(self):
-        min_tau = RectangularArea(top=self.tau*(1-self.tol), bottom=-math.inf, left=-math.inf, right=self.w_rg)
+        min_tau = RectangularArea(top=self.tau*(1-self.tol), bottom=-math.inf, left=-math.inf, right=self.wrg)
         return TemplatePlotData(x_label="Frequency", x_units="rad/s",
                                 y_label="Attenuation", y_units="dB", logscale=True, dB=True,
                                 covered_areas=[min_tau])
 
     def get_pass_bands(self):
-        return [[0, self.w_rg]]
+        return [[0, self.wrg]]
+
+    def is_ok(self):
+        return super().is_ok() and self.wrg > 0 and self.tau > 0 and 0 < self.tol < 1
 
 
 class RectangularArea:

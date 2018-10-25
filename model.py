@@ -17,8 +17,9 @@ class Model:
             "Group delay":  [filtertypes.GroupDelay, filter_template.GroupDelayTemplate]
         }
         self.filters = {}
+        self.stages = {}
         self.curr_id = 0
-
+        self.stage_id = 0
 # stage 2: diagrama de polos y ceros
 
     @staticmethod
@@ -45,15 +46,20 @@ class Model:
 
     def add_filter(self, filter_type, approx, param, n_min, n_max, q_max, denorm_degree):
         template = (self.filter_dict.get(filter_type)[1])(param, n_min, n_max, q_max, denorm_degree)
-        f = (self.filter_dict.get(filter_type)[0])(template, approx)
-        f.calculate_pzkn()
-        plots = {}
-        norm_plots = {}
-        self.get_filter_plots(f, plots, norm_plots)
-        self.curr_id += 1
-        self.filters[self.curr_id] = [f, plots, norm_plots]
 
-        return f.type + " " + f.approx + " order " + str(f.n), self.curr_id
+        if template.is_ok():
+            f = (self.filter_dict.get(filter_type)[0])(template, approx)
+            f.calculate_pzkn()
+
+            plots = {}
+            norm_plots = {}
+            self.get_filter_plots(f, plots, norm_plots)
+
+            self.curr_id += 1
+            self.filters[self.curr_id] = [f, plots, norm_plots]
+            return f.type + " " + f.approx + " order " + str(f.n), self.curr_id
+        else:
+            return "Error: parametros no validos", -1
 
     @staticmethod
     def get_filter_plots(f, plots, norm_plots):
@@ -123,7 +129,13 @@ class Model:
 
     def auto_stages(self, filter_id):
         f = self.filters[filter_id]
-        f.auto_stage_decomposition()
+        stages = f.auto_stage_decomposition()
+        self.stage_id += 1
+        plots = f.get_auto
+        self.stages[self.stage_id] = [filter_id, stages, plots]
+        #self.get_stages_plot()
+
+
 
     def get_filter_pzplot(self, filter_id):
         return self.filters[filter_id][1]["Pole-zero map"]
