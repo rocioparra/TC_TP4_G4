@@ -28,7 +28,7 @@ class Model:
                  "Group delay", "Q values", "Pole-zero map"])
 
     def get_plot(self, filter_id, plot_name, norm):
-        if norm:
+        if int(norm):
             plot_type = 2
         else:
             plot_type = 1
@@ -84,7 +84,7 @@ class Model:
         tf = tf.to_tf()
 
         [w, y, y2] = signal.bode(system=tf, n=1000)
-        plots["Bode diagram - magnitude"] = [ContinuousPlotData(x_label="Frequency", x_units="rad/s",
+        plots["Bode diagram - attenuation"] = [ContinuousPlotData(x_label="Frequency", x_units="rad/s",
                                         y_label="Attenuation", y_units="dB",  x_data=w, y_data=(-1)*y,
                                         logscale=True, dB=True)]
         plots["Bode diagram - phase"] = [ContinuousPlotData(x_label="Frequency", x_units="rad/s",
@@ -125,7 +125,7 @@ class Model:
         if template.template_type == "Group delay":
             plots["Group delay"].append(template.get_plot())
         else:
-            plots["Bode diagram - magnitude"].append(template.get_plot())
+            plots["Bode diagram - attenuation"].append(template.get_plot())
 
     def auto_stages(self, filter_id):
         f = self.filters[filter_id]

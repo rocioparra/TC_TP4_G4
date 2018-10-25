@@ -61,10 +61,10 @@ class Stage:
                               vout_min=vout_min, vout_max=vout_max, pass_bands=pass_bands)
 
     @staticmethod
-    def calculate_rd(zeros, poles, vout_min, vout_max, gain_factor, pass_bands):
+    def calculate_rd(zeros, poles, vout_min, vout_max,gain_factor, pass_bands):
         [min_at, max_at] = Stage.get_min_max_attenuation(zeros, poles, gain_factor, pass_bands)
-        vin_max = abs(vout_max * min_at)
-        vin_min = abs(vout_min * max_at)
+        vin_max = vout_max / max_at
+        vin_min = vout_min / min_at
         rd = vin_max / vin_min
         return [vin_min, vin_max, min_at, max_at, rd]
 

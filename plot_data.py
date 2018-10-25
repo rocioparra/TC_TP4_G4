@@ -5,6 +5,7 @@ class PlotData:
         self.x_label = x_label
         self.y_label = y_label
         self.x_units = x_units
+        self.y_units = y_units
         self.logscale = logscale
         self.dB = dB
 
