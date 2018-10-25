@@ -113,8 +113,8 @@ class Model:
 
         plots["Group delay"] = [ContinuousPlotData(x_label="Frequency", x_units="rad/s", y_label="Delay",
                                         y_units="s", logscale=True, dB=False, x_data=w, y_data=gd_points)]
-        plots["Group delay"].append(ScatterPlotData(x_label="Frequency", x_units="rad/s", y_label="Delay",
-                                     y_units="s", logscale=True, dB=False, points=delta_points))
+        #plots["Group delay"].append(ScatterPlotData(x_label="Frequency", x_units="rad/s", y_label="Delay",
+        #                             y_units="s", logscale=True, dB=False, points=delta_points))
 
         q = []
         Model.get_q_points(p, q)

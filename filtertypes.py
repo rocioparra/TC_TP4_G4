@@ -3,6 +3,7 @@ import numpy as np
 from scipy import signal
 import appoximations
 from filter_template import LowPassTemplate, GroupDelayTemplate, TemplateParameters
+import copy
 
 
 class LowPass(filter.Filter):
@@ -19,7 +20,7 @@ class LowPass(filter.Filter):
         return TemplateParameters(wa=True, wp=True, alpha_a=True, alpha_p=True)
 
     def normalize(self):
-        self.normalized_template = self.denormalized_template
+        self.normalized_template = copy.deepcopy(self.denormalized_template)
         self.normalized_template.wp = 1
         self.normalized_template.wa = self.denormalized_template.wa/self.denormalized_template.wp
 
@@ -221,13 +222,18 @@ class GroupDelay(filter.Filter):
         return TemplateParameters(wrg=True, tau=True, tol=True)
 
     def normalize(self):
-        self.normalized_template = self.denormalized_template
+        self.normalized_template = copy.deepcopy(self.denormalized_template)
         self.normalized_template.wrg = self.denormalized_template.wrg * self.denormalized_template.tau
         self.normalized_template.tau = 1
 
     def denormalize_one_pole(self, pole):
-        self.denormalized_k /= self.denormalized_template.tau
-        self.denormalized_poles.append(pole/self.denormalized_template.tau)
+        tau = self.denormalized_template.tau
+        p = pole.real / tau + 1j * pole.imag / tau
+
+        if pole.imag > 0:
+            return [p, np.conj(p)], [], 1/tau**2
+        else:
+            return [p], [], 1/tau
 
     def correct_norm_degree(self):
         pass
