@@ -30,7 +30,7 @@ class FilterTemplate(ABC):
 class LowPassTemplate(FilterTemplate):
     def __init__(self, param, n_min, n_max, q_max, denorm_degree):
         super().__init__("Low-pass", n_min, n_max, q_max, denorm_degree)
-        [self.wp, self.wa, self.alpha_p, self.alpha_a] = param
+        [self.wp, self.wa, self.alpha_p, self.alpha_a] = [param.wp, param.wa, param.alpha_p, param.alpha_a]
 
     def get_plot(self):
         pass_band = RectangularArea(top=math.inf, bottom=self.alpha_p, left=0, right=self.wp)
@@ -46,7 +46,7 @@ class LowPassTemplate(FilterTemplate):
 class HighPassTemplate(FilterTemplate):
     def __init__(self, param, n_min, n_max, q_max, denorm_degree):
         super().__init__("High-pass", n_min, n_max, q_max, denorm_degree)
-        [self.wp, self.wa, self.alpha_p, self.alpha_a] = param
+        [self.wp, self.wa, self.alpha_p, self.alpha_a] = [param.wp, param.wa, param.alpha_p, param.alpha_a]
 
     def get_plot(self):
         pass_band = RectangularArea(top=math.inf, bottom=self.alpha_p, left=self.wp, right=math.inf)
@@ -63,7 +63,8 @@ class HighPassTemplate(FilterTemplate):
 class BandPassTemplate(FilterTemplate):
     def __init__(self, param, n_min, n_max, q_max, denorm_degree):
         super().__init__("Band-pass", n_min, n_max, q_max, denorm_degree)
-        [self.w0, self.bw_p, self.bw_a, self.alpha_p, self.alpha_a] = param
+        [self.w0, self.bw_p, self.bw_a, self.alpha_p, self.alpha_a] = \
+            [param.w0, param.bw_p, param.bw_a, param.alpha_p, param.alpha_a]
 
         w02 = self.w0 ** 2
         self.wp_plus = (self.bw_p + math.sqrt(self.bw_p ** 2 + 4 * w02)) / 2
@@ -87,7 +88,8 @@ class BandPassTemplate(FilterTemplate):
 class BandRejectTemplate(FilterTemplate):
     def __init__(self, param, n_min, n_max, q_max, denorm_degree):
         super().__init__("Band-reject", n_min, n_max, q_max, denorm_degree)
-        [self.w0, self.bw_p, self.bw_a, self.alpha_p, self.alpha_a] = param
+        [self.w0, self.bw_p, self.bw_a, self.alpha_p, self.alpha_a] = \
+            [param.w0, param.bw_p, param.bw_a, param.alpha_p, param.alpha_a]
 
         w02 = self.w0 ** 2
         self.wp_plus = (self.bw_p + math.sqrt(self.bw_p ** 2 + 4 * w02)) / 2
@@ -111,7 +113,7 @@ class BandRejectTemplate(FilterTemplate):
 class GroupDelayTemplate(FilterTemplate):
     def __init__(self, param, n_min, n_max, q_max):
         super().__init__("Group delay", n_min, n_max, q_max, denorm_degree=None)
-        [self.w_rg, self.tau, self.tol] = param
+        [self.w_rg, self.tau, self.tol] = [param.w_rg, param.tau, param.tol]
 
     def get_plot(self):
         min_tau = RectangularArea(top=self.tau*(1-self.tol), bottom=-math.inf, left=-math.inf, right=self.w_rg)
