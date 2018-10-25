@@ -31,8 +31,8 @@ class Model:
 
     def add_filter(self, filter_type, approx, param, n_min, n_max, q_max, denorm_degree):
         template = (self.filter_dict.get(filter_type)[1])(param, n_min, n_max, q_max, denorm_degree)
-        f = (self.filter_dict.get(filter_type)[0])(template, approx)
-        f.calculate_pzkn()
+        self.f = (self.filter_dict.get(filter_type)[0])(template, approx)
+        self.f.calculate_pzkn()
         self.get_filter_plots(f, self.plots, self.norm_plots)
 
     @staticmethod

@@ -1,5 +1,5 @@
 import numpy as np
-
+import filter
 
 class Stage:
     def __init__(self, poles, zeros, gain_factor, vout_min, vout_max, pass_bands):
@@ -40,19 +40,22 @@ class Stage:
         max_rd = -inf
         best_partner = None
 
+        filter.Filter.re_add_complex(zero)
+
         for pole in poles:          # recorro la lista de polos
 
-            [_, _, rd] = calculate_rd(zero, poles, vout_min, vout_max, pass_bands)
+            filter.Filter.re_add_complex(pole)
+            [_, _, rd] = Stage.calculate_rd(zero, pole, vout_min, vout_max, pass_bands)
 
             if rd > max_rd:             # el que tiene mejor rd es la mejor pareja
                 best_partner = pole
 
-        Filter.re_add_complex(best_partner)
-        st = Stage(zero, [best_partner], gain_factor, vout_min, vout_max, pass_bands)
+        st = Stage(zero, best_partner, gain_factor, vout_min, vout_max, pass_bands)
+        filter.Filter.add_only_one_complex(best_partner)
 
         # elimino al polo que acabo de utilizar para que no se itere con el al buscar al companero del prox cero
         poles.remove(best_partner)
-
+        filter.Filter.add_only_one_complex(zero)
         return st
 
     @staticmethod
@@ -63,7 +66,7 @@ class Stage:
 
     @staticmethod
     def calculate_rd(zeros, poles, vout_min, vout_max, pass_bands):
-        [min_at, max_at] = get_min_max_attenuation(zeros, poles, gain_factor, pass_bands)
+        [min_at, max_at] = Stage.get_min_max_attenuation(zeros, poles, gain_factor, pass_bands)
         vin_max = vout_max / max_at
         vin_min = vout_min / min_at
         rd = vin_max / vin_min
@@ -71,8 +74,8 @@ class Stage:
 
     @staticmethod
     def get_min_max_attenuation(poles, zeros, gain_factor, pass_bands):
-        Filter.re_add_complex(poles)
-        Filter.re_add_complex(zeros)
+        filter.Filter.re_add_complex(poles)
+        filter.Filter.re_add_complex(zeros)
 
         sys = signal.ZeroesPolesGain(zeros, poles, gain_factor)
         max_at = -inf
@@ -86,8 +89,8 @@ class Stage:
             if max(attenuation) > max_at:
                 max_at = max(attenuation)
 
-        Filter.add_only_one_complex(poles)
-        Filter.add_only_one_complex(zeros)
+        filter.Filter.add_only_one_complex(poles)
+        filter.Filter.add_only_one_complex(zeros)
 
         return [min_at, max_at]
 
