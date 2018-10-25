@@ -1,6 +1,7 @@
 import numpy as np
 import filter
-
+import math
+from scipy import signal
 class Stage:
     def __init__(self, poles, zeros, gain_factor, vout_min, vout_max, pass_bands):
         self.poles = poles
@@ -8,15 +9,16 @@ class Stage:
         self.gain_factor = gain_factor
 
         [self.vin_min, self.vin_max, self.k_min, self.k_max, self.dynamic_range] = self.calculate_rd(self.poles,
-                                                                             self.zeros, vout_min, vout_max, pass_bands)
+                                                                                                self.zeros, vout_min, vout_max,
+                                                                                                self.gain_factor, pass_bands)
         self.q = None
         # etapas de primer o segundo orden solamente!!
         if len(poles) == 1:         # chequeo que sea un solo polo, que puede ser real o complejo:
             if not poles[0].imag:   # si es complejo
-                self.q = np.abssolute(poles[0]) / (2 * poles.real)  # calculo el q
+                self.q = np.absolute(poles[0]) / (2 * poles.real)  # calculo el q
 
     def get_display_info(self):
-        return [self.vin_min, self.vin_max, self.q, self.rd]
+        return [self.vin_min, self.vin_max, self.q, self.dynamic_range]
 
     # --------------------------
     # find_best_partner
@@ -37,21 +39,21 @@ class Stage:
     @staticmethod
     def find_best_partner(zero, poles, gain_factor, vout_min, vout_max, pass_bands):
 
-        max_rd = -inf
+        max_rd = -math.inf
         best_partner = None
 
-        filter.Filter.re_add_complex(zero)
+        filter.Filter.re_add_complex([zero])
 
         for pole in poles:          # recorro la lista de polos
 
-            filter.Filter.re_add_complex(pole)
-            [_, _, rd] = Stage.calculate_rd(zero, pole, vout_min, vout_max, pass_bands)
+            filter.Filter.re_add_complex([pole])
+            [_, _, _, _, rd] = Stage.calculate_rd(zero, pole, vout_min, vout_max, gain_factor, pass_bands)
 
             if rd > max_rd:             # el que tiene mejor rd es la mejor pareja
                 best_partner = pole
 
         st = Stage(zero, best_partner, gain_factor, vout_min, vout_max, pass_bands)
-        filter.Filter.add_only_one_complex(best_partner)
+        filter.Filter.add_only_one_complex([best_partner])
 
         # elimino al polo que acabo de utilizar para que no se itere con el al buscar al companero del prox cero
         poles.remove(best_partner)
@@ -61,11 +63,11 @@ class Stage:
     @staticmethod
     def update_dynamic_ranges(stages, vout_min, vout_max, pass_bands):
         for k in range(len(stages)):
-            stages[k] = Stage(poles=stage.poles, zeros=stage.zeros, gain_factor=stage.gain_factor,
+            stages[k] = Stage(poles=stages[k].poles, zeros=stages[k].zeros, gain_factor=stages[k].gain_factor,
                               vout_min=vout_min, vout_max=vout_max, pass_bands=pass_bands)
 
     @staticmethod
-    def calculate_rd(zeros, poles, vout_min, vout_max, pass_bands):
+    def calculate_rd(zeros, poles, vout_min, vout_max,gain_factor, pass_bands):
         [min_at, max_at] = Stage.get_min_max_attenuation(zeros, poles, gain_factor, pass_bands)
         vin_max = vout_max / max_at
         vin_min = vout_min / min_at
@@ -74,15 +76,17 @@ class Stage:
 
     @staticmethod
     def get_min_max_attenuation(poles, zeros, gain_factor, pass_bands):
+        poles = [poles]
+        zeros = [zeros]
         filter.Filter.re_add_complex(poles)
         filter.Filter.re_add_complex(zeros)
 
-        sys = signal.ZeroesPolesGain(zeros, poles, gain_factor)
-        max_at = -inf
-        min_at = inf
+        sys = signal.ZerosPolesGain(zeros, poles, gain_factor)
+        max_at = -math.inf
+        min_at = math.inf
 
         for pass_band in pass_bands:
-            w = np.logspace(start=log10(pass_band[0]), stop=log10(pass_band[1]), endpoint=True, base=10)
+            w = np.logspace(start=math.log10(pass_band[0]), stop=math.log10(pass_band[1]), endpoint=True, base=10)
             [_, attenuation, _] = signal.bode(system=sys, w=w)
             if min(attenuation) < min_at:
                 min_at = min(attenuation)

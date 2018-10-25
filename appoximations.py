@@ -1,7 +1,7 @@
 import math
 import cmath
 import numpy
-from zope.interface import Interface, implements
+from interface import Interface, implements, default
 import numpy.polynomial.legendre as legpol
 from numpy.polynomial import Polynomial
 import numpy.polynomial.polynomial as poly
@@ -40,6 +40,7 @@ class Approximation(Interface):
     # devuelve los polos y ceros con im()>0. como las funciones que definen son a coefs ctes reales, agregar el conjugado
         pass
 
+    @default
     @staticmethod
     def epsilon(alpha):
         return math.sqrt(10**(alpha/10)-1)

@@ -1,6 +1,6 @@
 from model import Model
 from matplotlib import pyplot as plt
-from appoximations import Cauer
+#from appoximations import Cauer
 from filter_template import LowPassTemplate, BandPassTemplate
 
 m = Model()
