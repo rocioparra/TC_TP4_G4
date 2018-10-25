@@ -3,6 +3,13 @@ import math
 from plot_data import TemplatePlotData
 
 
+class TemplateParameters:
+    def __init__(self, wa=False, wp=False, Aa=False, Ap=False, w0=False, BWp=False, BWa=False, tau=False, tol=False, wrg=False):
+        self.data = [wa, wp, Aa, Ap, w0, BWp, BWa, tau, tol, wrg]
+        [self.wa, self.wp, self.Aa, self.Ap, self.w0, self.BWp, self.BWa, self.tau, self.tol, self.wrg] = \
+            [wa, wp, Aa, Ap, w0, wp, BWa, tau, tol, wrg]
+
+
 class FilterTemplate(ABC):
     def __init__(self, template_type, n_min, n_max, q_max, denorm_degree):
         self.template_type = template_type
@@ -50,6 +57,7 @@ class HighPassTemplate(FilterTemplate):
 
     def get_pass_bands(self):
         return [[self.wp, math.inf]]
+
 
 
 class BandPassTemplate(FilterTemplate):
