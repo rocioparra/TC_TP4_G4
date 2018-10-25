@@ -20,7 +20,7 @@ class Filter(ABC):
         self.normalized_template = None
         self.denormalized_template = None
         self.n = None
-        self.stages = None
+        self.stages = []
 
     @staticmethod
     @abstractmethod
