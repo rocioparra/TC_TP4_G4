@@ -243,16 +243,16 @@ class Filter(ABC):
         n = len(poles)  # para asignarle a todos la misma ganancia al principio
 
         for zero in zeros:
-            st = Stage.find_best_partner(zero=zero, poles=poles, gain_factor=self.gain_factor**(1/float(n)),
-                                         vout_min=vout_min, vout_max=vout_max,
-                                         pass_bands=self.denormalized_template.get_pass_bands())
+            st = stages.Stage.find_best_partner(zero=zero, poles=poles, gain_factor=self.denormalized_k**(1/float(n)),
+                                                vout_min=vout_min, vout_max=vout_max,
+                                                pass_bands=self.denormalized_template.get_pass_bands())
             self.stages.append(st)
         for pole in poles:              # me quede sin ceros, procedo con los polos!
-            self.stages.append(Stage(pole, [], self.gain_factor**(1/float(n))))
+            self.stages.append(stages.Stage(pole, [], self.denormalized_k**(1/float(n))))
 
         # ahora corrijo la ganancia para el principio
-        self.stages[0].gain_factor = self.gain_factor * (1 - log10(g))
-        for i in range(1, len(stages), 1):
+        self.stages[0].gain_factor = self.denormalized_k * (1 - log10(g))
+        for i in range(1, len(self.stages), 1):
             self.stages[i].gain_factor = (float(g) / (float(g) - log10(g)))**(1/float(n-1))
 
         return self.stages
@@ -302,7 +302,7 @@ class Filter(ABC):
             if not((prev_stage.k_max * prev_stage.vin_max) <= stage.vin_max):
                 prev_stage.vin_max = stage.vin_max / prev_stage.k_max
 
-        return prev.stage.vin_max / prev_stage.vin_min
+        return prev_stage.vin_max / prev_stage.vin_min
 
     def delete_stage(self, stage):
         self.stages.remove(stage)

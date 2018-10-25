@@ -33,7 +33,7 @@ class Model:
         template = (self.filter_dict.get(filter_type)[1])(param, n_min, n_max, q_max, denorm_degree)
         self.f = (self.filter_dict.get(filter_type)[0])(template, approx)
         self.f.calculate_pzkn()
-        self.get_filter_plots(f, self.plots, self.norm_plots)
+        self.get_filter_plots(self.f, self.plots, self.norm_plots)
 
     @staticmethod
     def get_filter_plots(f, plots, norm_plots):
