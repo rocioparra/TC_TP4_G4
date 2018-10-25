@@ -3,20 +3,26 @@ import numpy as np
 from scipy import signal
 import appoximations
 from filter_template import LowPassTemplate, HighPassTemplate, BandPassTemplate, BandRejectTemplate, GroupDelayTemplate
+
+
 class LowPass(filter.Filter):
     def __init__(self, template, approx):
         super().__init__("Low-pass", approx)
         self.denormalized_template = template
+
     @staticmethod
     def get_available_approximations():
         return appoximations.get_attenuation_approximations()
+
     @staticmethod
     def get_parameter_list():
         return ["wp", "wa", "alpha p", "alpha a"]
+
     def normalize(self):
         self.normalized_template = self.denormalized_template
         self.normalized_template.wp = 1
         self.normalized_template.wa = self.denormalized_template.wa/self.denormalized_template.wp
+
     def denormalize_one_pole(self, pole):
         # cambio de variable: s-> s/wp
         # 1/(s-p) -> (wp) /(s - wp*p)
@@ -31,16 +37,20 @@ class LowPass(filter.Filter):
             [denorm_zeroes, denorm_poles, gain_factor] = \
                 signal.tf2zpk([wp**2], [1, - 2 * np.real(pole)*wp, wp**2 * abs(pole)**2])
         return [list(denorm_poles), list(denorm_zeroes), gain_factor]
+
 class HighPass(filter.Filter):
     def __init__(self, template, approx):
         super().__init__("High-pass", approx)
         self.denormalized_template = template
+
     @staticmethod
     def get_available_approximations():
         return appoximations.get_attenuation_approximations()
+
     @staticmethod
     def get_parameter_list():
         return ["wp", "wa", "alpha p", "alpha a"]
+
     def normalize(self):
         self.normalized_template = \
             LowPassTemplate(param=[1, self.denormalized_template.wp / self.denormalized_template.wa,
@@ -48,6 +58,7 @@ class HighPass(filter.Filter):
                             n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
                             q_max=self.denormalized_template.q_max,
                             denorm_degree=self.denormalized_template.denorm_degree)
+
     def denormalize_one_pole(self, pole):
         # cambio de variable: s-> wp/s
         # 1/(s-p) -> 1/(wp/s -p) -> (-s)/(s*p - wp)
@@ -62,17 +73,21 @@ class HighPass(filter.Filter):
             [denorm_zeroes, denorm_poles, gain_factor] = \
                 signal.tf2zpk([1, 0, 0], [abs(pole) ** 2, -wp * 2 * np.real(pole), wp ** 2])
         return [list(denorm_poles), list(denorm_zeroes), gain_factor]
+
 class BandPass(filter.Filter):
     def __init__(self, template, approx):
         super().__init__("Band-pass", approx)
         self.denormalized_template = template
         self.q = self.denormalized_template.w0/self.denormalized_template.bw_p
+
     @staticmethod
     def get_available_approximations():
         return appoximations.get_attenuation_approximations()
+
     @staticmethod
     def get_parameter_list():
         return ["w0", "bandwidth p", "bandwidth a" "alpha p", "alpha a"]
+
     def normalize(self):
         wa_norm = self.denormalized_template.bw_a/self.denormalized_template.bw_p
         self.normalized_template = \
@@ -80,6 +95,7 @@ class BandPass(filter.Filter):
                             n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
                             q_max=self.denormalized_template.q_max,
                             denorm_degree=self.denormalized_template.denorm_degree)
+
     def denormalize_one_pole(self, pole):
         # cambio de variable: s -> q*(s/wo+wo/s) = q*(s^2+wo^2)/(s*wo)
         # 1/(s-p) -> (wo*s)/(q*s^2 - p*s*wo + q*wo^2)
@@ -101,17 +117,21 @@ class BandPass(filter.Filter):
             [denorm_zeroes, denorm_poles, gain_factor] = signal.tf2zpk([-self.denormalized_template.w0**2, 0, 0],
                                                                        [a, b, c, d, e])
         return [list(denorm_poles), list(denorm_zeroes), gain_factor]
+
 class BandReject(filter.Filter):
     def __init__(self, template, approx):
         super().__init__("Band-reject", approx)
         self.denormalized_template = template
         self.q = self.denormalized_template.w0/self.denormalized_template.bw_p
+
     @staticmethod
     def get_available_approximations():
         return appoximations.get_attenuation_approximations()
+
     @staticmethod
     def get_parameter_list():
         return ["w0", "bandwidth p", "bandwidth a" "alpha p", "alpha a"]
+
     def normalize(self):
         wa_norm = self.denormalized_template.bw_p / self.denormalized_template.bw_a
         self.normalized_template = \
@@ -119,6 +139,7 @@ class BandReject(filter.Filter):
                             n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
                             q_max=self.denormalized_template.q_max,
                             denorm_degree=self.denormalized_template.denorm_degree)
+
     def denormalize_one_pole(self, pole):
         # cambio de variable: s -> 1/ ( q*(s/wo+wo/s) ) == s*wo / (q * (s^2 + wo^2) )
         # 1/(s-p) -> (- q*s^2 - q*wo^2)/(p*q*s^2 - s*wo + p*q*wo^2)
@@ -146,25 +167,32 @@ class BandReject(filter.Filter):
             j = np.absolute(pole)**2 * self.q**2 * self.denormalized_template.w0**4
             [denorm_zeroes, denorm_poles, gain_factor] = signal.tf2zpk([a, 0, c, 0, e], [f, g, h, i, j])
         return [list(denorm_poles), list(denorm_zeroes), gain_factor]
+
+
 class GroupDelay(filter.Filter):
     # params = [w_rg, tau, tolerance]
     def __init__(self, template, approx):
         super().__init__(filter_type="Group delay", approx=approx)
         self.denormalized_template = template
+
     @staticmethod
     def get_available_approximations():
         return appoximations.get_group_delay_approximations()
+
     @staticmethod
     def get_parameter_list():
         return ["w rg", "tau", "alpha p", "alpha a"]
+
     def normalize(self):
         w_rgn = self.denormalized_template.w_rg * self.denormalized_template.tau
         self.normalized_template = \
             GroupDelayTemplate(param=[w_rgn, 1, self.denormalized_template.tolerance],
                                n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
                                q_max=self.denormalized_template.q_max)
+
     def denormalize_one_pole(self, pole):
         self.denormalized_k /= self.denormalized_template.tau
         self.denormalized_poles.append(pole/self.denormalized_template.tau)
+
     def correct_norm_degree(self):
         pass
