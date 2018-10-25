@@ -39,8 +39,6 @@ class TCExample:
     def plotPha(self):
         print("plot pha")
 
-
-
         self.m.get_plot()
         for current_filter_info in self.filters_input:
             if current_filter_info[0]:  #si esta seleccionada
@@ -119,7 +117,7 @@ class TCExample:
                 self.dataPlot.draw()
 
     def set_filter_type(self):
-        print(self.filter_type_name.get())
+        self.is_filter_type_set = True
         self.approximation_type_list =  self.m.get_approximations_for(self.filter_type_name.get())
         self.approximation_type_menu.destroy()
         self.approximation_type_menu = OptionMenu(self.template_parameters_frame, self.approximation_type_name, *self.approximation_type_list)
@@ -135,11 +133,8 @@ class TCExample:
                 list(self.template_parameters_input.values())[i][2].config(state='disabled')
 
     def calculate_new_filter_cb(self):
-        #todo
-        #guardar el nombre y los plot para plotear en filters_list
-        #guardar el checkbox (state=normal) en filter_input_list
-        #plot t-odo de nuevo
-
+        if (not self.is_filter_type_set) or self.approximation_type_name == "Approximation type":
+            return
         nmin = 0
         nmax = 25
         if self.n_options_name == "N min y max":
@@ -213,6 +208,8 @@ class TCExample:
         self.root.title("Tc Example")
 
         self.m = Model()
+
+        self.is_filter_type_set = False
 
         self.filter_type_list = self.m.get_available_filters()
         self.approximation_type_list = ["Approximation type"]
