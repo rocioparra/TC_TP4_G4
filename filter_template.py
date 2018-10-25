@@ -4,10 +4,11 @@ from plot_data import TemplatePlotData
 
 
 class TemplateParameters:
-    def __init__(self, wa=False, wp=False, Aa=False, Ap=False, w0=False, BWp=False, BWa=False, tau=False, tol=False, wrg=False):
-        self.data = [wa, wp, Aa, Ap, w0, BWp, BWa, tau, tol, wrg]
-        [self.wa, self.wp, self.Aa, self.Ap, self.w0, self.BWp, self.BWa, self.tau, self.tol, self.w_rg] = \
-            [wa, wp, Aa, Ap, w0, wp, BWa, tau, tol, wrg]
+    def __init__(self, wa=False, wp=False, alpha_a=False, alpha_p=False, w0=False, bw_p=False, bw_a=False,
+                 tau=False, tol=False, wrg=False):
+        self.data = [wa, wp, alpha_a, alpha_p, w0, bw_p, bw_a, tau, tol, wrg]
+        [self.wa, self.wp, self.alpha_a, self.alpha_p, self.w0, self.bw_p, self.bw_a, self.tau, self.tol, self.wrg] = \
+            [wa, wp, alpha_a, alpha_p, w0, wp, bw_a, tau, tol, wrg]
 
 
 class FilterTemplate(ABC):
