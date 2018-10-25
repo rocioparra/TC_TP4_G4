@@ -41,11 +41,16 @@ class Model:
         f.re_add_complex(f.denormalized_zeros)
         Model.get_plots_from_pzk(f.denormalized_poles, f.denormalized_zeros, f.denormalized_k, f.denormalized_template,
                                  plots)
+        f.add_only_one_complex(f.denormalized_poles)
+        f.add_only_one_complex(f.denormalized_zeros)
 
         f.re_add_complex(f.normalized_poles)
         f.re_add_complex(f.normalized_zeros)
         Model.get_plots_from_pzk(f.normalized_poles, f.normalized_zeros, f.normalized_k, f.normalized_template,
                                  norm_plots)
+        f.add_only_one_complex(f.normalized_poles)
+        f.add_only_one_complex(f.normalized_poles)
+
 
     @staticmethod
     def get_plots_from_pzk(p, z, k, template, plots):

@@ -5,7 +5,7 @@ import appoximations
 import matplotlib.pyplot as plt
 import copy
 import stages
-
+import math
 
 class Filter(ABC):
     def __init__(self, filter_type, approx):
@@ -251,9 +251,9 @@ class Filter(ABC):
             self.stages.append(stages.Stage(pole, [], self.denormalized_k**(1/float(n))))
 
         # ahora corrijo la ganancia para el principio
-        self.stages[0].gain_factor = self.denormalized_k * (1 - log10(g))
+        self.stages[0].gain_factor = self.denormalized_k * (1 - math.log10(self.denormalized_k))
         for i in range(1, len(self.stages), 1):
-            self.stages[i].gain_factor = (float(g) / (float(g) - log10(g)))**(1/float(n-1))
+            self.stages[i].gain_factor = (float(self.denormalized_k) / (float(self.denormalized_k) - math.log10(self.denormalized_k)))**(1/float(n-1))
 
         return self.stages
 
@@ -269,10 +269,10 @@ class Filter(ABC):
     # OUTPUT:
         # lista total de etapas de la cadena, en orden.
     def single_stage_decomposition(self, poles, zeros, gain_factor, vout_min, vout_max):
-        st = Stage(poles=poles, zeros=zeros, gain_factor=gain_factor, vout_min=vout_min,
+        st = stages.Stage(poles=poles, zeros=zeros, gain_factor=gain_factor, vout_min=vout_min,
                    vout_max=vout_max, pass_bands=self.denormalized_template.get_pass_bands())  # ingresado por usuario, de una sola etapa x vez
         self.stages.append(st)
-        Stage.update_dynamic_ranges(self.stages, vout_min, vout_max)
+        stages.Stage.update_dynamic_ranges(self.stages, vout_min, vout_max)
         return self.stages
 
     # --------------------------

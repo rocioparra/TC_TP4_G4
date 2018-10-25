@@ -13,9 +13,8 @@ class Stage:
                                                                                                 self.gain_factor, pass_bands)
         self.q = None
         # etapas de primer o segundo orden solamente!!
-        if len(poles) == 1:         # chequeo que sea un solo polo, que puede ser real o complejo:
-            if not poles[0].imag:   # si es complejo
-                self.q = np.absolute(poles[0]) / (2 * poles.real)  # calculo el q
+        if poles[0].imag and poles[0].real:   # si es complejo
+            self.q = np.absolute(poles[0]) / (2 * poles[0].real)  # calculo el q
 
     def get_display_info(self):
         return [self.vin_min, self.vin_max, self.q, self.dynamic_range]
@@ -38,26 +37,21 @@ class Stage:
         # stage correspondiente al best partner del cero.
     @staticmethod
     def find_best_partner(zero, poles, gain_factor, vout_min, vout_max, pass_bands):
-
+        zero = [zero]
         max_rd = -math.inf
         best_partner = None
 
-        filter.Filter.re_add_complex([zero])
-
         for pole in poles:          # recorro la lista de polos
-
-            filter.Filter.re_add_complex([pole])
+            pole = [pole]
             [_, _, _, _, rd] = Stage.calculate_rd(zero, pole, vout_min, vout_max, gain_factor, pass_bands)
 
-            if rd > max_rd:             # el que tiene mejor rd es la mejor pareja
-                best_partner = pole
+            if rd > max_rd and len(pole) >= 1:             # el que tiene mejor rd es la mejor pareja
+                best_partner = [pole[0]]
 
         st = Stage(zero, best_partner, gain_factor, vout_min, vout_max, pass_bands)
-        filter.Filter.add_only_one_complex([best_partner])
 
         # elimino al polo que acabo de utilizar para que no se itere con el al buscar al companero del prox cero
         poles.remove(best_partner)
-        filter.Filter.add_only_one_complex(zero)
         return st
 
     @staticmethod
@@ -76,8 +70,7 @@ class Stage:
 
     @staticmethod
     def get_min_max_attenuation(poles, zeros, gain_factor, pass_bands):
-        poles = [poles]
-        zeros = [zeros]
+
         filter.Filter.re_add_complex(poles)
         filter.Filter.re_add_complex(zeros)
 
