@@ -1,31 +1,40 @@
-from appoximations import Butterworth, Chebyshev, InvChebyshev, Bessel
-from scipy import signal
-import matplotlib.pyplot as plt
-import math
-import numpy
-from filter_template import GroupDelayTemplate, LowPassTemplate
-from filtertypes import filter_factory
-from numpy.polynomial import Polynomial
-import numpy.polynomial.polynomial as poly
-from group_delay import group_delay
-from filter import Filter
 from model import Model
+from matplotlib import pyplot as plt
+from appoximations import Cauer
+from filter_template import LowPassTemplate
+
+template = LowPassTemplate([1, 1000, 2, 35], 1, 25, 100, 0)
+n = min(Cauer.get_min_n(template), 25)
+p, z, k = Cauer.pzk(25, template)
 
 
-m = Model()
 
-print(m.get_available_filters())
-print(m.get_approximations_for("High-pass"))
-print(m.get_parameters_for("High-pass"))
 
-m.add_filter("High-pass", "Chebyshev", [100, 10, 10, 50], 1, 25, 100, 0)
-f.calculate_pzkn()
-h = f.calculate_tf(f.denormalized_poles, f.denormalized_zeros, f.denormalized_k)
+# m = Model()
+#
+# print(m.get_available_filters())
+# print(m.get_approximations_for("Band-reject"))
+# print(m.get_parameters_for("Band-reject"))
+#
+# m.add_filter("Band-pass", "Butterworth", [500, 100, 1000, 10, 50], 1, 25, 100, 0)
+#
+# att = m.plots[2]
+# plt.semilogx(att.x_data, att.y_data)
+# plt.grid(b=True)
+# plt.show()
+#
+# att = m.plots[3]
+# plt.semilogx(att.x_data, att.y_data)
+# plt.grid(b=True)
+# plt.show()
 
-[w, mag, pha] = signal.bode(h)
-plt.semilogx(w, -mag)
-plt.grid(b=True)
-plt.show()
+# f.calculate_pzkn()
+# h = f.calculate_tf(f.denormalized_poles, f.denormalized_zeros, f.denormalized_k)
+#
+# [w, mag, pha] = signal.bode(h)
+# plt.semilogx(w, -mag)
+# plt.grid(b=True)
+# plt.show()
 # wp = 1
 # wa = 2
 # alpha_p = 10*math.log10(2)

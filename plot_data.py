@@ -14,7 +14,7 @@ class ContinuousPlotData(PlotData):
     def __init__(self, title, x_label, y_label, x_units, y_units, logscale, dB, x_data, y_data,):
         super().__init__('c', title, x_label, y_label, x_units, y_units, logscale, dB)
         self.x_data = x_data
-        self.y_label = y_data
+        self.y_data = y_data
 
 
 class ScatterPlotData(PlotData):

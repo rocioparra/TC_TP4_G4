@@ -40,7 +40,7 @@ class LowPass(filter.Filter):
             [denorm_zeroes, denorm_poles, gain_factor] = \
                 signal.tf2zpk([wp**2], [1, - 2 * np.real(pole)*wp, wp**2 * abs(pole)**2])
 
-        return [denorm_poles, denorm_zeroes, gain_factor]
+        return [list(denorm_poles), list(denorm_zeroes), gain_factor]
 
 
 class HighPass(filter.Filter):
@@ -82,13 +82,14 @@ class HighPass(filter.Filter):
             [denorm_zeroes, denorm_poles, gain_factor] = \
                 signal.tf2zpk([1, 0, 0], [abs(pole) ** 2, -wp * 2 * np.real(pole), wp ** 2])
 
-        return [denorm_poles, denorm_zeroes, gain_factor]
+        return [list(denorm_poles), list(denorm_zeroes), gain_factor]
 
 
 class BandPass(filter.Filter):
     def __init__(self, template, approx):
         super().__init__("Band-pass", approx)
         self.denormalized_template = template
+        self.q = self.denormalized_template.w0/self.denormalized_template.bw_p
 
     @staticmethod
     def get_available_approximations():
@@ -101,7 +102,7 @@ class BandPass(filter.Filter):
     def normalize(self):
         wa_norm = self.denormalized_template.bw_a/self.denormalized_template.bw_p
         self.normalized_template = \
-            LowPassTemplate(param=[1, wa_norm, self.denormalized_template.alpha_a, self.denormalized_template.alpha_p],
+            LowPassTemplate(param=[1, wa_norm, self.denormalized_template.alpha_p, self.denormalized_template.alpha_a],
                             n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
                             q_max=self.denormalized_template.q_max,
                             denorm_degree=self.denormalized_template.denorm_degree)
@@ -115,7 +116,8 @@ class BandPass(filter.Filter):
 
         if pole.imag == 0:
             [denorm_zeroes, denorm_poles, gain_factor] = \
-                signal.tf2zpk([self.wo, 0], [self.q, -pole * self.wo, self.q * self.wo**2])
+                signal.tf2zpk([self.denormalized_template.w0, 0], [self.q, -pole * self.denormalized_template.w0,
+                                                                   self.q * self.denormalized_template.w0**2])
 
         # 1/( (s-p)*(s-conj(p)) ) ->
         # ((-wo^2)*s^2)/((-q^2)*s^4 + q*wo*(conj(p) + p) *s^3 + (- 2*q^2*wo^2 - p*conj(p)*wo^2)*s^2 + (p*q*wo^3 + q*wo^3*conj(p))*s - q^2*wo^4)
@@ -125,20 +127,22 @@ class BandPass(filter.Filter):
 
         else:
             a = -self.q**2
-            b = self.q * self.wo * 2 * np.real(pole)
-            c = -(2*self.q**2 + abs(pole)**2)*self.wo**2
-            d = 2 * np.real(pole) * self.q * self.wo**3
-            e = - self.q**2 * self.wo**4
+            b = self.q * self.denormalized_template.w0 * 2 * np.real(pole)
+            c = -(2*self.q**2 + abs(pole)**2)*self.denormalized_template.w0**2
+            d = 2 * np.real(pole) * self.q * self.denormalized_template.w0**3
+            e = - self.q**2 * self.denormalized_template.w0**4
 
-            [denorm_zeroes, denorm_poles, gain_factor] = scipy.signal.tf2zpk([-self.wo**2, 0, 0], [a, b, c, d, e])
+            [denorm_zeroes, denorm_poles, gain_factor] = signal.tf2zpk([-self.denormalized_template.w0**2, 0, 0],
+                                                                       [a, b, c, d, e])
 
-        return [denorm_poles, denorm_zeroes, gain_factor]
+        return [list(denorm_poles), list(denorm_zeroes), gain_factor]
 
 
 class BandReject(filter.Filter):
     def __init__(self, template, approx):
         super().__init__("Band-reject", approx)
         self.denormalized_template = template
+        self.q = self.denormalized_template.w0/self.denormalized_template.bw_p
 
     @staticmethod
     def get_available_approximations():
@@ -151,7 +155,7 @@ class BandReject(filter.Filter):
     def normalize(self):
         wa_norm = self.denormalized_template.bw_p / self.denormalized_template.bw_a
         self.normalized_template = \
-            LowPassTemplate(param=[1, wa_norm, self.denormalized_template.alpha_a, self.denormalized_template.alpha_p],
+            LowPassTemplate(param=[1, wa_norm, self.denormalized_template.alpha_p, self.denormalized_template.alpha_a],
                             n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
                             q_max=self.denormalized_template.q_max,
                             denorm_degree=self.denormalized_template.denorm_degree)
@@ -165,7 +169,8 @@ class BandReject(filter.Filter):
 
         if pole.imag == 0:
             [denorm_zeroes, denorm_poles, gain_factor] = signal.tf2zpk(
-                [-self.q, 0, -self.q*self.wo**2], [pole*self.q, - self.wo, pole*self.q*self.wo**2])
+                [-self.q, 0, -self.q*self.denormalized_template.w0**2],
+                [pole*self.q, - self.denormalized_template.w0, pole*self.q*self.denormalized_template.w0**2])
 
         # (q^2*s^4 + 2*q^2*s^2*wo^2 + q^2*wo^4) /
         # ((p*q^2*conj(p))*s^4 + (- q*wo*conj(p) - p*q*wo)*s^3 + (2*p*conj(p)*q^2*wo^2 + wo^2)*s^2 + (- p*q*wo^3 - q*wo^3*conj(p))*s + p*q^2*wo^4*conj(p))
@@ -178,19 +183,19 @@ class BandReject(filter.Filter):
 
             # numerador
             a = self.q**2
-            c = 2 * self.q**2 * self.wo**2
-            e = self.q**2 * self.wo**4
+            c = 2 * self.q**2 * self.denormalized_template.w0**2
+            e = self.q**2 * self.denormalized_template.w0**4
             # denominador
 
-            f = abs(pole)**2 * self.q**2
-            g = -self.q*self.wo*2*np.real(pole)
-            h = (2*abs(pole)**2 * self.q**2 * self.wo**2 + self.wo**2)
-            i = -self.wo**3*self.q*2*np.real(pole)
-            j = abs(pole)**2 * self.q**2 * self.wo**4
+            f = np.absolute(pole)**2 * self.q**2
+            g = -self.q*self.denormalized_template.w0*2*pole.real
+            h = (2*np.absolute(pole)**2 * self.q**2 * self.denormalized_template.w0**2 + self.denormalized_template.w0**2)
+            i = -self.denormalized_template.w0**3*self.q*2*pole.real
+            j = np.absolute(pole)**2 * self.q**2 * self.denormalized_template.w0**4
 
             [denorm_zeroes, denorm_poles, gain_factor] = signal.tf2zpk([a, 0, c, 0, e], [f, g, h, i, j])
 
-        return [denorm_poles, denorm_zeroes, gain_factor]
+        return [list(denorm_poles), list(denorm_zeroes), gain_factor]
 
 
 class GroupDelay(filter.Filter):

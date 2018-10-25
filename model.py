@@ -33,7 +33,7 @@ class Model:
         template = (self.filter_dict.get(filter_type)[1])(param, n_min, n_max, q_max, denorm_degree)
         f = (self.filter_dict.get(filter_type)[0])(template, approx)
         f.calculate_pzkn()
-        self.get_filter_plots(f)
+        self.get_filter_plots(f, self.plots, self.norm_plots)
 
     @staticmethod
     def get_filter_plots(f, plots, norm_plots):
@@ -49,22 +49,22 @@ class Model:
 
     @staticmethod
     def get_plots_from_pzk(p, z, k, template, plots):
-        tf = signal.ZerosPolesGain(p, z, k)
+        tf = signal.ZerosPolesGain(z, p, k)
         tf = tf.to_tf()
 
         [w, y, y2] = signal.bode(system=tf, n=1000)
         plots.append(ContinuousPlotData(title="Bode diagram - magnitude", x_label="Frequency", x_units="rad/s",
-                                        y_label="Attenuation", y_units="dB",  x_data=x, y_data=(-1)*y,
+                                        y_label="Attenuation", y_units="dB",  x_data=w, y_data=(-1)*y,
                                         logscale=True, dB=True))
         plots.append(ContinuousPlotData(title="Bode diagram - phase", x_label="Frequency", x_units="rad/s",
                                         y_label="Phase", y_units="(°)", x_data=w, y_data=y2, dB=False, logscale=True))
 
-        [x, y] = signal.step(tf)
+        [x, y] = signal.step(tf, N=1000)
         plots.append(ContinuousPlotData(title="Step response", x_label="Time", x_units="s",
                                         y_label="Amplitude", y_units="dimensionless", logscale=False, dB=False,
                                         x_data=x, y_data=y))
 
-        [x, y] = signal.impulse(tf)
+        [x, y] = signal.impulse(tf, N=1000)
         plots.append(ContinuousPlotData(title="Impulse response", x_label="Time", x_units="s",
                                         y_label="Amplitude", y_units="dimensionless", logscale=False, dB=False,
                                         x_data=x, y_data=y))
@@ -88,12 +88,10 @@ class Model:
         q = []
         Model.get_q_points(p, q)
         Model.get_q_points(z, q)
-        plots.append()
         plots.append(ScatterPlotData(title="Q values", x_label="", x_units="", y_label="Q", y_units="dimensionless",
                                      logscale=False, dB=False, points=q))
 
         plots.append(template.get_plot())
-
 
     @staticmethod
     def get_pzplot(p, z):
@@ -136,8 +134,8 @@ class Model:
         k = 1
 
         for c in comp:
-            if c.imag:
-                q_point.y = numpy.absolute(c) / (2 * c.real)
+            if c.imag and c.real:
+                q_point.y = numpy.absolute(c) / (2 * abs(c.real))
                 if next((repeat for repeat in q if repeat.y == q_point.y), None) is None:
                     q_point.x = str(k)
                     q.append(q_point)

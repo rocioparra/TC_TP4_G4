@@ -23,7 +23,7 @@ class FilterTemplate(ABC):
 class LowPassTemplate(FilterTemplate):
     def __init__(self, param, n_min, n_max, q_max, denorm_degree):
         super().__init__("Low-pass", n_min, n_max, q_max, denorm_degree)
-        [self.wa, self.wp, self.alpha_p, self.alpha_a] = param
+        [self.wp, self.wa, self.alpha_p, self.alpha_a] = param
 
     def get_plot(self):
         pass_band = RectangularArea(top=math.inf, bottom=self.alpha_p, left=0, right=self.wp)
@@ -39,7 +39,7 @@ class LowPassTemplate(FilterTemplate):
 class HighPassTemplate(FilterTemplate):
     def __init__(self, param, n_min, n_max, q_max, denorm_degree):
         super().__init__("High-pass", n_min, n_max, q_max, denorm_degree)
-        [self.wa, self.wp, self.alpha_p, self.alpha_a] = param
+        [self.wp, self.wa, self.alpha_p, self.alpha_a] = param
 
     def get_plot(self):
         pass_band = RectangularArea(top=math.inf, bottom=self.alpha_p, left=self.wp, right=math.inf)
