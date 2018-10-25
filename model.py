@@ -19,6 +19,8 @@ class Model:
         self.filters = {}
         self.curr_id = 0
 
+# stage 2: diagrama de polos y ceros
+
     @staticmethod
     def get_available_plots():
         return (["Bode diagram - attenuation", "Bode diagram - phase", "Step response", "Impulse response",
@@ -119,6 +121,27 @@ class Model:
         else:
             plots["Bode diagram - magnitude"].append(template.get_plot())
 
+    def auto_stages(self, filter_id):
+        f = self.filters[filter_id]
+        f.auto_stage_decomposition()
+
+    def get_filter_pzplot(self, filter_id):
+        return self.filters[filter_id][1]["Pole-zero map"]
+
+    def get_pzk_strings(self, filter_id):
+        f = self.filters[filter_id]
+        pole_str = []
+        zero_str = []
+        k = str(f.denormalized_k)
+
+        for p in f.denormalized_poles:
+            pole_str.append(str(p))
+
+        for z in f.denormalized_zeros:
+            zero_str.append(str(z))
+
+        return pole_str, zero_str, k
+
     @staticmethod
     def get_pzplot(p, z):
         pole_points = Model.add_pz_points(p, "x")
@@ -126,8 +149,9 @@ class Model:
 
         filter.Filter.re_add_complex(p)
         filter.Filter.re_add_complex(z)
-
         points = pole_points + zero_points
+        filter.Filter.add_only_one_complex(p)
+        filter.Filter.add_only_one_complex(z)
         return ScatterPlotData(x_label="Real", x_units="rad/s", y_label="Imaginary",
                                y_units="rad/s", logscale=False, dB=False, points=points)
 
