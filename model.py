@@ -44,7 +44,7 @@ class Model:
     def get_approximations_for(self, filter_str):
         return (self.filter_dict.get(filter_str))[0].get_available_approximations()
 
-    def add_filter(self, filter_type, approx, param, n_min, n_max, q_max, denorm_degree):
+    def add_filter(self, filter_type, approx, param, n_min, n_max, q_max, denorm_degree=None):
         template = (self.filter_dict.get(filter_type)[1])(param, n_min, n_max, q_max, denorm_degree)
 
         if template.is_ok():

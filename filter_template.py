@@ -126,8 +126,8 @@ class BandRejectTemplate(FilterTemplate):
 
 
 class GroupDelayTemplate(FilterTemplate):
-    def __init__(self, param, n_min, n_max, q_max):
-        super().__init__("Group delay", n_min, n_max, q_max, denorm_degree=None)
+    def __init__(self, param, n_min, n_max, q_max, denorm_degree=None):
+        super().__init__("Group delay", n_min, n_max, q_max, denorm_degree=denorm_degree)
         [self.wrg, self.tau, self.tol] = [param.wrg, param.tau, param.tol]
 
     def get_plot(self):

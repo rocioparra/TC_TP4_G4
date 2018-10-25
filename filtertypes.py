@@ -16,7 +16,7 @@ class LowPass(filter.Filter):
 
     @staticmethod
     def get_parameter_list():
-        return TemplateParameters(wa=True, wp=True, Aa=True, Ap=True)
+        return TemplateParameters(wa=True, wp=True, alpha_a=True, alpha_p=True)
 
     def normalize(self):
         self.normalized_template = self.denormalized_template
@@ -54,7 +54,7 @@ class HighPass(filter.Filter):
 
     @staticmethod
     def get_parameter_list():
-        return TemplateParameters(wa=True, wp=True, Aa=True, Ap=True)
+        return TemplateParameters(wa=True, wp=True, alpha_a=True, alpha_p=True)
 
     def normalize(self):
         self.normalized_template = \
@@ -97,7 +97,7 @@ class BandPass(filter.Filter):
 
     @staticmethod
     def get_parameter_list():
-        return TemplateParameters(w0=True, BWp=True, BWa=True, Aa=True, Ap=True)
+        return TemplateParameters(w0=True, bw_p=True, bw_a=True, alpha_a=True, alpha_p=True)
 
     def normalize(self):
         wa_norm = self.denormalized_template.bw_a/self.denormalized_template.bw_p
@@ -150,7 +150,7 @@ class BandReject(filter.Filter):
 
     @staticmethod
     def get_parameter_list():
-        return TemplateParameters(w0=True, BWp=True, BWa=True, Aa=True, Ap=True)
+        return TemplateParameters(w0=True, bw_p=True, bw_a=True, alpha_a=True, alpha_p=True)
 
     def normalize(self):
         wa_norm = self.denormalized_template.bw_p / self.denormalized_template.bw_a
@@ -199,7 +199,6 @@ class BandReject(filter.Filter):
 
 
 class GroupDelay(filter.Filter):
-    # params = [wrg, tau, tolerance]
     def __init__(self, template, approx):
         super().__init__(filter_type="Group delay", approx=approx)
         self.denormalized_template = template
@@ -215,7 +214,7 @@ class GroupDelay(filter.Filter):
     def normalize(self):
         wrgn = self.denormalized_template.wrg * self.denormalized_template.tau
         self.normalized_template = \
-            GroupDelayTemplate(param=[wrgn, 1, self.denormalized_template.tolerance],
+            GroupDelayTemplate(param=[wrgn, 1, self.denormalized_template.tol],
                                n_min=self.denormalized_template.n_min, n_max=self.denormalized_template.n_max,
                                q_max=self.denormalized_template.q_max)
 

@@ -135,7 +135,7 @@ class TCExample:
         template_parameters_list = []
         for key in self.template_parameters_input:
             if self.template_parameters_input[key][0].get():
-                template_parameters_list.append(int(self.template_parameters_input[key][0].get()))
+                template_parameters_list.append(float(self.template_parameters_input[key][0].get()))
             else:
                 template_parameters_list.append(None)
             print(self.template_parameters_input[key][0].get())
