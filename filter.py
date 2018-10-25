@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from scipy import signal
-from appoximations import approximation_factory
+import appoximations
 import matplotlib.pyplot as plt
 import copy
 import stages
@@ -101,7 +101,7 @@ class Filter(ABC):
         self.normalize()  # obtengo la plantilla normalizada
 
         # determino el grado con el que voy a hacer el filtro
-        approximation = approximation_factory(self.approx)
+        approximation = appoximations.approximation_factory(self.approx)
         n = approximation.get_min_n(self.normalized_template)  # obtengo el minimo que me cumple plantilla
         if n > self.normalized_template.n_max:  # aplico las restricciones que me dijo el usuario
             n = self.normalized_template.n_max
