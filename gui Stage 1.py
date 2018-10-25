@@ -9,6 +9,7 @@ from tkinter import *
 from model import Model
 from filter_template import TemplateParameters
 import math
+import matplotlib.pyplot
 
 
 class TCExample:
@@ -31,13 +32,27 @@ class TCExample:
                     else:
                         self.axis.plot(plot.x_data, plot.y_data)
                 if plot.plot_type == 's':
-                    pass
+                    real = []
+                    imag = []
+                    markers = []
+                    for point in plot.points:
+                        marker = None
+                        if point.format == 'x' or point.format == 'o':
+                            marker = str(point.format)
+                        if marker is not None:
+                            markers.append(marker)
+                            real.append(point.x)
+                            imag.append(point.y)
+
+                    matplotlib.pyplot.scatter(x=real, y=imag, marker=markers)
 
         self.dataPlot.draw()
 
 
     def plotPha(self):
         print("plot pha")
+
+
 
         self.m.get_plot()
         for current_filter_info in self.filters_input:
@@ -159,7 +174,6 @@ class TCExample:
 
         template_parameters_list_to_send = TemplateParameters(*template_parameters_list)
 
-        #todo:control de error
         new_filter_input = []                #checkbutton y variable para ver si esta seleccionado o no
         new_filter_input.append(IntVar())    #guarda si esta seleccionado o no
 
@@ -175,7 +189,11 @@ class TCExample:
         new_filter_input.append(Checkbutton(self.existing_filters_frame, variable=new_filter_input[0], text=new_filter_input[1], state='normal'))
         new_filter_input[3].pack(side = TOP, fill='x')
 
-        self.filters_input.append(new_filter_input)
+
+        if new_filter_input[2] == -1:         #hubo error
+            messagebox.showinfo("Error", new_filter_input[1])
+        else:
+            self.filters_input.append(new_filter_input)
 
 
     def n_mode_cb(self, mode):
