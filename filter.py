@@ -52,15 +52,15 @@ class Filter(ABC):
         
         for p in self.normalized_poles:
             [denorm_poles, denorm_zeroes, gain_factor] = self.denormalize_one_pole(p)
-            self.denormalized_poles.append(denorm_poles)
-            self.denormalized_zeros.append(denorm_zeroes)
+            self.denormalized_poles = self.denormalized_poles + denorm_poles
+            self.denormalized_zeros = self.denormalized_zeros + denorm_zeroes
             self.denormalized_k = self.denormalized_k * gain_factor
 
         for z in self.normalized_zeros:
             # ESTA AL REVES A PROPOSITO!!! LOS CEROS TIENEN CONVERSION INVERSA A LOS POLOS!!
-            [denorm_zeroes, denorm_poles, gain_factor] = self.denormalized_one_pole(z)
-            self.denormalized_poles.append(denorm_poles)
-            self.denormalized_zeros.append(denorm_zeroes)
+            [denorm_zeroes, denorm_poles, gain_factor] = self.denormalize_one_pole(z)
+            self.denormalized_poles = self.denormalized_poles + denorm_poles
+            self.denormalized_zeros = self.denormalized_zeros + denorm_zeroes
             self.denormalized_k = self.denormalized_k * (1/gain_factor)
 
         self.add_only_one_complex(self.denormalized_poles)
@@ -112,14 +112,21 @@ class Filter(ABC):
         self.correct_norm_degree()
         self.denormalize()      # desnormalizo todos los polos
         q = self.get_max_q()
+        self.re_add_complex(self.denormalized_poles)
+        self.n = len(self.denormalized_poles)
+        self.add_only_one_complex(self.denormalized_poles)
 
-        while q > self.denormalized_template.q_max and n > 1:
+        while q > self.denormalized_template.q_max and n > 1 and self.n > self.denormalized_template.n_max:
             n -= 1  # bajo el grado hastas que cumpla q<q_max o no pueda bajar mas
             [self.normalized_poles, self.normalized_zeros, self.normalized_k] = \
                 approximation.pzk(n, self.normalized_template)
             self.correct_norm_degree()
-            self.denormalize()
+            self.denormalize()  # desnormalizo todos los polos
             q = self.get_max_q()
+            self.re_add_complex(self.denormalized_poles)
+            self.n = len(self.denormalized_poles)
+            self.add_only_one_complex(self.denormalized_poles)
+
         self.n = n
 
 
@@ -137,9 +144,12 @@ class Filter(ABC):
         # void.
     @staticmethod
     def add_only_one_complex(complex_nums):
+        aux = []
         for comp in complex_nums:
             if comp.imag < 0:
-                complex_nums.remove(comp)
+                aux.append(comp)
+        for comp in aux:
+            complex_nums.remove(comp)
 
     # --------------------------
     # re_add_complex
@@ -155,7 +165,8 @@ class Filter(ABC):
         # void.
     @staticmethod
     def re_add_complex(complex_nums):
-        for comp in complex_nums:
+        back_up = complex_nums
+        for comp in back_up:
             if comp.imag > 0:
                 complex_nums.append(np.conj(comp))
 
@@ -204,8 +215,8 @@ class Filter(ABC):
         self.normalized_k *= (k_norm ** (len(self.normalized_zeros) - len(self.normalized_poles)))
 
     def get_max_q(self):
-        q = [np.absolute(pole)/(2*pole.real) for pole in self.denormalized_poles if pole.imag]
-        q = q + [np.absolute(zero)/(2*zero.real) for zero in self.denormalized_zeros if zero.imag]
+        q = [np.absolute(pole)/abs(2*pole.real) for pole in self.denormalized_poles if pole.imag and pole.real]
+        q = q + [-np.absolute(zero)/abs(2*zero.real) for zero in self.denormalized_zeros if zero.imag and zero.real]
         if q:
             return max(q)
         else:
