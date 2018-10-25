@@ -1,7 +1,7 @@
 import math
 import cmath
 import numpy
-from zope.interface import Interface, implements
+from abc import ABC, abstractmethod
 import numpy.polynomial.legendre as legpol
 from numpy.polynomial import Polynomial
 import numpy.polynomial.polynomial as poly
@@ -30,12 +30,14 @@ def approximation_factory(s):
     return switcher.get(s)
 
 
-class Approximation(Interface):
+class Approximation(ABC):
     @staticmethod
+    @abstractmethod
     def get_min_n(template):
         pass
 
     @staticmethod
+    @abstractmethod
     def pzk(n, template):
     # devuelve los polos y ceros con im()>0. como las funciones que definen son a coefs ctes reales, agregar el conjugado
         pass
@@ -45,7 +47,7 @@ class Approximation(Interface):
         return math.sqrt(10**(alpha/10)-1)
 
 
-class Butterworth(implements(Approximation)):
+class Butterworth(Approximation):
     @staticmethod
     def get_min_n(template):
         epsilon = Butterworth.epsilon(template.alpha_p)
@@ -73,7 +75,7 @@ class Butterworth(implements(Approximation)):
         return [poles, [], k]
 
 
-class Chebyshev(implements(Approximation)):
+class Chebyshev(Approximation):
     @staticmethod
     def get_min_n(template):
         epsilon = Chebyshev.epsilon(template.alpha_p)
@@ -104,7 +106,7 @@ class Chebyshev(implements(Approximation)):
         return [poles, [], gain]
 
 
-class InvChebyshev(implements(Approximation)):
+class InvChebyshev(Approximation):
     @staticmethod
     def get_min_n(template):
         return Chebyshev.get_min_n(template)
@@ -141,7 +143,7 @@ class InvChebyshev(implements(Approximation)):
         return [poles, zeros, gain]
 
 
-class Bessel(implements(Approximation)):
+class Bessel(Approximation):
     polynomials = []
     # primeros dos polinomios de bessel. el resto los voy agregando a medida que los calculo
 
