@@ -103,10 +103,6 @@ class Filter(ABC):
         # determino el grado con el que voy a hacer el filtro
         approximation = appoximations.approximation_factory(self.approx)
         n = approximation.get_min_n(self.normalized_template)  # obtengo el minimo que me cumple plantilla
-        if n > self.normalized_template.n_max:  # aplico las restricciones que me dijo el usuario
-            n = self.normalized_template.n_max
-        elif n < self.normalized_template.n_min:
-            n = self.normalized_template.n_min
 
         # obtengo polos y ceros para este orden
         [self.normalized_poles, self.normalized_zeros, self.normalized_k] = \
@@ -129,7 +125,17 @@ class Filter(ABC):
             self.n = len(self.denormalized_poles)
             self.add_only_one_complex(self.denormalized_poles)
 
-        self.n = n
+        while self.n < self.denormalized_template.n_min:
+            n += 1
+            [self.normalized_poles, self.normalized_zeros, self.normalized_k] = \
+                approximation.pzk(n, self.normalized_template)
+            self.correct_norm_degree()
+            self.denormalize()  # desnormalizo todos los polos
+            q = self.get_max_q()
+            self.re_add_complex(self.denormalized_poles)
+            self.n = len(self.denormalized_poles)
+            self.add_only_one_complex(self.denormalized_poles)
+
 
     # --------------------------
     # add_only_one_complex
