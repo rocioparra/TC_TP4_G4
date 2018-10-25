@@ -31,20 +31,20 @@ class TCExample:
                         self.axis.semilogx(plot.x_data, plot.y_data)
                     else:
                         self.axis.plot(plot.x_data, plot.y_data)
-                if plot.plot_type == 's':
-                    real = []
-                    imag = []
-                    markers = []
-                    for point in plot.points:
-                        marker = None
-                        if point.format == 'x' or point.format == 'o':
-                            marker = str(point.format)
-                        if marker is not None:
-                            markers.append(marker)
-                            real.append(point.x)
-                            imag.append(point.y)
-
-                    matplotlib.pyplot.scatter(x=real, y=imag, marker=markers)
+                # if plot.plot_type == 's':
+                #     real = []
+                #     imag = []
+                #     markers = []
+                #     for point in plot.points:
+                #         current_marker = None
+                #         if (point.format == 'x') or (point.format == 'o'):
+                #             current_marker = str(point.format)
+                #         if current_marker is not None:
+                #             markers.append(current_marker)
+                #             real.append(point.x)
+                #             imag.append(point.y)
+                #             matplotlib.pyplot.scatter(x=real, y=imag, marker=markers)
+                #
 
         self.dataPlot.draw()
 
@@ -218,7 +218,7 @@ class TCExample:
     def delete_unselected_cb(self):
         for i in range(len(self.filters_input)-1, -1, -1):  #recorro de atras para adelante para no modificar el indice cuando elimino
             if not self.filters_input[i][0].get():
-                self.filters_input[i][1].destroy()          #delete el checkbox y el elemento de la lista si no esta seleccionado
+                self.filters_input[i][3].destroy()          #delete el checkbox y el elemento de la lista si no esta seleccionado
                 del self.filters_input[i]
 
     def __init__(self):
