@@ -82,8 +82,8 @@ class TCExample:
 
     def populate_stages_overview_frame(self, stages_overview_frame):
         print("populate_stages_overview_frame")
-        Button(stages_overview_frame, text = "<", command = self.scroll_stages_overview_left).pack(side = LEFT, fill = Y)
-        Button(stages_overview_frame, text = ">", command = self.scroll_stages_overview_right).pack(side = RIGHT, fill = Y)
+        Button(stages_overview_frame, text="<", command=self.scroll_stages_overview_left).pack(side=LEFT, fill=Y)
+        Button(stages_overview_frame, text=">", command=self.scroll_stages_overview_right).pack(side=RIGHT, fill=Y)
         # self.stages_overview_frame[1].frame.pack_forget()
 
     def populate_pole_zero_frame(self, pole_zero_frame):
@@ -132,20 +132,22 @@ class TCExample:
         self.draw_stages_overview()
 
     def draw_stages_overview(self):
-        for stage_overview in self.stages_overview_frame:
+        for stage_overview in self.stages_overview_subframes:
             stage_overview.pack_forget()
         for i in range(3):
-            self.stages_overview_frame[self.stages_overview_scroll_offset + i].pack(side = LEFT)
+            if (self.stages_overview_scroll_offset + i) < (len(self.stages_overview_subframes) - 1):
+                self.stages_overview_subframes[self.stages_overview_scroll_offset + i].pack(side=LEFT)
 
     def add_stage(self):
         new_stage_frame = Frame(self.stages_overview_frame)
         new_is_stage_selected = IntVar()
-        Checkbutton(new_stage_frame, variable=new_is_stage_selected, state='normal').pack(side = BOTTOM, fill = X)   #todo: agregar nombre de la etapa
+        Checkbutton(new_stage_frame, variable=new_is_stage_selected, state='normal').pack(side=BOTTOM, fill=X)   #todo: agregar nombre de la etapa
         graph = Canvas(new_stage_frame, bg='red', width=100)
         #todo: dibujar en el canvas el filtro correspondiente
         graph.pack(side=TOP, expand=True)
         self.stages_overview_subframes.append(new_stage_frame)
         self.stages_overview_is_selected.append(new_is_stage_selected)
+        self.draw_stages_overview()
 
     def create_stage_with_selected_cb(self):
         print("create_stage_with_selected_cb")
@@ -177,11 +179,11 @@ class TCExample:
         self.stages_overview_subframes = []
         self.stages_overview_is_selected = []
         self.stages_overview_scroll_offset = 0
+        self.stages_overview_list = []
 
         f = Figure()
         self.axis = f.add_subplot(111)
 
-        self.stages_overview_list = []
 
         #------------------------------------------------------------------------
         # menu de la ventana
@@ -197,18 +199,18 @@ class TCExample:
 
 
         self.pole_zero_frame = LabelFrame(self.root, text = "Pole-Zero", width = 50)
-        self.pole_zero_frame.pack(side = LEFT, fill = 'y')
+        self.pole_zero_frame.pack(side=LEFT, fill='y')
         self.populate_pole_zero_frame(self.pole_zero_frame)
 
 
         self.stages_frame = LabelFrame(self.root,text = "Stages",  width = 40)
-        self.stages_frame.pack(side = LEFT, fill = BOTH, expand = True)
+        self.stages_frame.pack(side=LEFT, fill=BOTH, expand=True)
 
-        #divido en dos para poder poner cosas en las esquinas con side = TOP/BOTTOM
-        self.stages_right_frame = LabelFrame(self.stages_frame, text = "r")
-        self.stages_right_frame.pack(side = RIGHT, fill = BOTH, expand = True)
-        self.stages_left_frame = LabelFrame(self.stages_frame, text = "l")
-        self.stages_left_frame.pack(side = LEFT, fill = BOTH)
+        # divido en dos para poder poner cosas en las esquinas con side = TOP/BOTTOM
+        self.stages_right_frame = LabelFrame(self.stages_frame, text="r")
+        self.stages_right_frame.pack(side=RIGHT, fill=BOTH, expand=True)
+        self.stages_left_frame = LabelFrame(self.stages_frame, text="l")
+        self.stages_left_frame.pack(side=LEFT, fill=BOTH)
 
 
         #cuatro paneles dentro de stages:
@@ -216,16 +218,16 @@ class TCExample:
         self.stages_data_frame.pack(anchor = 'nw', fill = X)
         self.populate_stages_data_frame(self.stages_data_frame)
 
-        self.stages_plot_control_frame = LabelFrame(self.stages_left_frame, text = "Plot control", width = 40)
-        self.stages_plot_control_frame.pack(anchor = 'sw', fill = X)
+        self.stages_plot_control_frame = LabelFrame(self.stages_left_frame, text="Plot control", width = 40)
+        self.stages_plot_control_frame.pack(anchor='sw', fill=X)
         self.populate_stages_plot_control_frame(self.stages_plot_control_frame)
 
-        self.stages_plot_frame = LabelFrame(self.stages_right_frame, text = "Plot", width = 1)
-        self.stages_plot_frame.pack(anchor = 'ne', fill = 'x', expand = True)
+        self.stages_plot_frame = LabelFrame(self.stages_right_frame, text="Plot", width=1)
+        self.stages_plot_frame.pack(anchor='ne', fill='x', expand=True)
         self.populate_stages_plot_frame(self.stages_plot_frame)
 
-        self.stages_overview_frame = LabelFrame(self.stages_right_frame, text = "stages", width = 40)
-        self.stages_overview_frame.pack(anchor = 'se', fill = 'x', expand = True)
+        self.stages_overview_frame = LabelFrame(self.stages_right_frame, text="stages", width=40)
+        self.stages_overview_frame.pack(anchor='se', fill = 'x', expand=True)
         self.populate_stages_overview_frame(self.stages_overview_frame)
 
 
