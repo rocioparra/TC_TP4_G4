@@ -32,19 +32,14 @@ class TCExample:
                     else:
                         self.axis.plot(plot.x_data, plot.y_data)
                 if plot.plot_type == 's':
-                    real = []
-                    imag = []
-                    markers = []
                     for point in plot.points:
-                        current_marker = None
-                        if (point.format == 'x') or (point.format == 'o'):
-                            current_marker = matplotlib.markers.MarkerStyle(current_marker)
-                        if current_marker is not None:
-                            markers.append(current_marker)
-                            real.append(point.x)
-                            imag.append(point.y)
-                    if len(real):
-                        matplotlib.pyplot.scatter(x=real, y=imag)#, marker=markers)
+                        # voy graficando punto por punto
+
+                        if point.format == 'x':
+                            self.axis.plot(point.x, point.y, color='green', marker=point.format)
+                        if point.format == 'o':
+                            self.axis.plot(point.x, point.y, color='blue', marker=point.format)
+
         self.dataPlot.draw()
 
 
