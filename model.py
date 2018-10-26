@@ -5,6 +5,7 @@ from scipy import signal
 import numpy
 from plot_data import ContinuousPlotData, ScatterPlotData, TemplatePlotData, ScatterPoint
 from group_delay import group_delay
+import math
 
 
 class Model:
@@ -122,10 +123,22 @@ class Model:
         plots["Q values"] = [ScatterPlotData(x_label="", x_units="", y_label="Q", y_units="dimensionless",
                                      logscale=False, dB=False, points=q)]
 
+        template_plot = template.get_plot()
         if template.template_type == "Group delay":
-            plots["Group delay"].append(template.get_plot())
+            template_plot.covered_areas[0].bottom = min(plots["Group delay"][0].y_data)
+            template_plot.covered_areas[0].left = w[0]
+            plots["Group delay"].append(template_plot)
         else:
-            plots["Bode diagram - attenuation"].append(template.get_plot())
+            template_plot.covered_areas[0].left = w[0]
+            template_plot.covered_areas[-1].right = w[-1]
+            min_y = min(plots["Bode diagram - attenuation"][0].y_data)
+            max_y = max(plots["Bode diagram - attenuation"][0].y_data)
+            for area in template_plot.covered_areas:
+                if abs(area.top) == math.inf:
+                    area.top = max_y
+                elif abs(area.bottom) == math.inf:
+                    area.bottom = min_y
+        plots["Bode diagram - attenuation"].append(template_plot)
 
     def auto_stages(self, filter_id):
         f = self.filters[filter_id]
@@ -158,12 +171,7 @@ class Model:
     def get_pzplot(p, z):
         pole_points = Model.add_pz_points(p, "x")
         zero_points = Model.add_pz_points(z, "o")
-
-        filter.Filter.re_add_complex(p)
-        filter.Filter.re_add_complex(z)
         points = pole_points + zero_points
-        filter.Filter.add_only_one_complex(p)
-        filter.Filter.add_only_one_complex(z)
         return ScatterPlotData(x_label="Real", x_units="rad/s", y_label="Imaginary",
                                y_units="rad/s", logscale=False, dB=False, points=points)
 
@@ -174,7 +182,7 @@ class Model:
             point = ScatterPoint()
             point.x = s.real
             point.y = s.imag
-            point.mark = mark
+            point.format = mark
             point.legend = None
 
             repeat = next((rp for rp in points if rp.x == point.x and rp.y == point.y), None)
@@ -182,6 +190,8 @@ class Model:
                 if repeat.legend is None:
                     repeat.legend = 1
                 point.legend = int(repeat.legend) + 1
+            else:
+                points.append(point)
 
         for p in points:
             if p.legend is not None:
@@ -201,5 +211,3 @@ class Model:
                 if next((repeat for repeat in q if repeat.y == q_point.y), None) is None:
                     q_point.x = str(k)
                     q.append(q_point)
-
-

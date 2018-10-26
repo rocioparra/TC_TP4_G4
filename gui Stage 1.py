@@ -10,6 +10,7 @@ from model import Model
 from filter_template import TemplateParameters
 import math
 import matplotlib.pyplot
+import matplotlib.markers
 
 
 class TCExample:
@@ -17,10 +18,9 @@ class TCExample:
     def show_credits(self):
         messagebox.showinfo("Credits", "La sororidad 2018")
 
-
-
     def plot(self):
         self.axis.clear()
+        self.axis.grid(color='grey', linestyle='-')
         for filter in self.filters_input:
             plots = self.m.get_plot(filter[2], self.current_plot.get(), self.normalizacion.get() != "Desnormalizado")
             for plot in plots:
@@ -31,21 +31,20 @@ class TCExample:
                         self.axis.semilogx(plot.x_data, plot.y_data)
                     else:
                         self.axis.plot(plot.x_data, plot.y_data)
-                # if plot.plot_type == 's':
-                #     real = []
-                #     imag = []
-                #     markers = []
-                #     for point in plot.points:
-                #         current_marker = None
-                #         if (point.format == 'x') or (point.format == 'o'):
-                #             current_marker = str(point.format)
-                #         if current_marker is not None:
-                #             markers.append(current_marker)
-                #             real.append(point.x)
-                #             imag.append(point.y)
-                #             matplotlib.pyplot.scatter(x=real, y=imag, marker=markers)
-                #
-
+                if plot.plot_type == 's':
+                    real = []
+                    imag = []
+                    markers = []
+                    for point in plot.points:
+                        current_marker = None
+                        if (point.format == 'x') or (point.format == 'o'):
+                            current_marker = matplotlib.markers.MarkerStyle(current_marker)
+                        if current_marker is not None:
+                            markers.append(current_marker)
+                            real.append(point.x)
+                            imag.append(point.y)
+                    if len(real):
+                        matplotlib.pyplot.scatter(x=real, y=imag)#, marker=markers)
         self.dataPlot.draw()
 
 

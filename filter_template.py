@@ -56,11 +56,11 @@ class HighPassTemplate(FilterTemplate):
         [self.wp, self.wa, self.alpha_p, self.alpha_a] = [param.wp, param.wa, param.alpha_p, param.alpha_a]
 
     def get_plot(self):
-        pass_band = RectangularArea(top=math.inf, bottom=self.alpha_p, left=self.wp, right=math.inf)
-        stop_band = RectangularArea(top=-math.inf, bottom=self.alpha_a, left=0, right=self.wa)
+        stop_band = RectangularArea(top=math.inf, bottom=self.alpha_a, left=0, right=self.wa)
+        pass_band = RectangularArea(top=self.alpha_p, bottom=-math.inf, left=self.wp, right=math.inf)
         return TemplatePlotData(x_label="Frequency", x_units="rad/s",
                                 y_label="Attenuation", y_units="dB", logscale=True, dB=True,
-                                covered_areas=[pass_band, stop_band])
+                                covered_areas=[stop_band, pass_band])
 
     def get_pass_bands(self):
         return [[self.wp, math.inf]]
