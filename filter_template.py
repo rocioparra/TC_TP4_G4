@@ -56,8 +56,8 @@ class HighPassTemplate(FilterTemplate):
         [self.wp, self.wa, self.alpha_p, self.alpha_a] = [param.wp, param.wa, param.alpha_p, param.alpha_a]
 
     def get_plot(self):
-        stop_band = RectangularArea(top=math.inf, bottom=self.alpha_a, left=0, right=self.wa)
-        pass_band = RectangularArea(top=self.alpha_p, bottom=-math.inf, left=self.wp, right=math.inf)
+        stop_band = RectangularArea(top=self.alpha_a, bottom=math.inf, left=0, right=self.wa)
+        pass_band = RectangularArea(top=-math.inf, bottom=self.alpha_p, left=self.wp, right=math.inf)
         return TemplatePlotData(x_label="Frequency", x_units="rad/s",
                                 y_label="Attenuation", y_units="dB", logscale=True, dB=True,
                                 covered_areas=[stop_band, pass_band])
@@ -82,9 +82,9 @@ class BandPassTemplate(FilterTemplate):
         self.wa_minus = w02 / self.wa_plus
 
     def get_plot(self):
-        stop_low = RectangularArea(top=math.inf, bottom=self.alpha_a, left=0, right=self.wa_minus)
-        pass_band = RectangularArea(top=self.alpha_p, bottom=-math.inf, left=self.wp_minus, right=self.wp_plus)
-        stop_high = RectangularArea(top=math.inf, bottom=self.alpha_a, left=self.wa_plus, right=math.inf)
+        stop_low = RectangularArea(top=self.alpha_a, bottom=math.inf, left=0, right=self.wa_minus)
+        pass_band = RectangularArea(top=-math.inf, bottom=self.alpha_p, left=self.wp_minus, right=self.wp_plus)
+        stop_high = RectangularArea(top=self.alpha_a, bottom=math.inf, left=self.wa_plus, right=math.inf)
 
         return TemplatePlotData(x_label="Frequency", x_units="rad/s",
                                 y_label="Attenuation", y_units="dB", logscale=True, dB=True,
@@ -110,9 +110,9 @@ class BandRejectTemplate(FilterTemplate):
         self.wa_minus = w02 / self.wa_plus
 
     def get_plot(self):
-        pass_low = RectangularArea(top=self.alpha_p, bottom=-math.inf, left=0, right=self.wp_minus)
-        stop_band = RectangularArea(top=math.inf, bottom=self.alpha_a,  left=self.wa_minus, right=self.wa_plus)
-        pass_high = RectangularArea(top=self.alpha_p, bottom=-math.inf, left=self.wp_plus, right=math.inf)
+        pass_low = RectangularArea(top=-math.inf, bottom=self.alpha_p, left=0, right=self.wp_minus)
+        stop_band = RectangularArea(top=self.alpha_a, bottom=math.inf,  left=self.wa_minus, right=self.wa_plus)
+        pass_high = RectangularArea(top=-math.inf, bottom=self.alpha_p, left=self.wp_plus, right=math.inf)
 
         return TemplatePlotData(x_label="Frequency", x_units="rad/s",
                                 y_label="Attenuation", y_units="dB", logscale=True, dB=True,
