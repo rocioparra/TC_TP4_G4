@@ -376,15 +376,15 @@ class TCExample:
 
         toolbar.pack(side=RIGHT,fill=Y)
         graph = Canvas(self.root)
-        graph.pack(side=TOP,fill=BOTH,expand=True,padx=2,pady=4)
+        graph.pack(side=TOP, fill=BOTH, expand=True, padx=2, pady=4)
         #-------------------------------------------------------------------------------
 
         f = Figure()
         self.axis = f.add_subplot(111)
-        self.sys = signal.TransferFunction([1],[1,1])
-        self.w,self.mag,self.phase = signal.bode(self.sys)
-        self.stepT,self.stepMag = signal.step(self.sys)
-        self.impT,self.impMag = signal.impulse(self.sys)
+        self.sys = signal.TransferFunction([1], [1, 1])
+        self.w, self.mag, self.phase = signal.bode(self.sys)
+        self.stepT, self.stepMag = signal.step(self.sys)
+        self.impT, self.impMag = signal.impulse(self.sys)
 
         self.dataPlot = FigureCanvasTkAgg(f, master=graph)
         self.dataPlot.draw()
@@ -398,5 +398,3 @@ class TCExample:
 
 if __name__ == "__main__":
     ex = TCExample()
-gui Stage 1.py
-Mostrando gui Stage 1.py.

@@ -127,27 +127,32 @@ class TCExample:
         self.draw_stages_overview()
 
     def scroll_stages_overview_right(self):
-        if self.stages_overview_scroll_offset < len(self.stages_overview_frame)-3:
-            self.stages_overview_scroll_offset+=1
+        if self.stages_overview_scroll_offset < (len(self.stages_overview_subframes)-3):
+            self.stages_overview_scroll_offset += 1
         self.draw_stages_overview()
 
     def draw_stages_overview(self):
         for stage_overview in self.stages_overview_subframes:
             stage_overview.pack_forget()
         for i in range(3):
-            if (self.stages_overview_scroll_offset + i) < (len(self.stages_overview_subframes) - 1):
+            if (self.stages_overview_scroll_offset + i) < len(self.stages_overview_subframes):
                 self.stages_overview_subframes[self.stages_overview_scroll_offset + i].pack(side=LEFT)
 
-    def add_stage(self):
-        new_stage_frame = Frame(self.stages_overview_frame)
-        new_is_stage_selected = IntVar()
-        Checkbutton(new_stage_frame, variable=new_is_stage_selected, state='normal').pack(side=BOTTOM, fill=X)   #todo: agregar nombre de la etapa
-        graph = Canvas(new_stage_frame, bg='red', width=100)
-        #todo: dibujar en el canvas el filtro correspondiente
-        graph.pack(side=TOP, expand=True)
-        self.stages_overview_subframes.append(new_stage_frame)
-        self.stages_overview_is_selected.append(new_is_stage_selected)
-        self.draw_stages_overview()
+    def add_stage_to_stage_overview_frame(self, amount):
+
+        for i in range(amount):
+            f = Figure()
+            new_stage_frame = Frame(self.stages_overview_frame)
+            new_is_stage_selected = IntVar()
+            Checkbutton(new_stage_frame, variable=new_is_stage_selected, state='normal', text='Stage' + str(i+1)).pack(side=BOTTOM, fill=X)   #todo: agregar nombre de la etapa
+            graph = Canvas(new_stage_frame, bg='red', width=100)
+            self.stages_overview_dataPlots.append(FigureCanvasTkAgg(f, master=graph))
+
+            # todo: dibujar en el canva s el filtro correspondiente
+            graph.pack(side=TOP, expand=True)
+            self.stages_overview_subframes.append(new_stage_frame)
+            self.stages_overview_is_selected.append(new_is_stage_selected)
+            self.draw_stages_overview() #: para ver que efectivamente se crean!
 
     def create_stage_with_selected_cb(self):
         print("create_stage_with_selected_cb")
@@ -229,8 +234,9 @@ class TCExample:
         self.stages_overview_frame = LabelFrame(self.stages_right_frame, text="stages", width=40)
         self.stages_overview_frame.pack(anchor='se', fill = 'x', expand=True)
         self.populate_stages_overview_frame(self.stages_overview_frame)
+        self.add_stage_to_stage_overview_frame(3)         #agrego 3 frames a stage overview frame
 
-
+        self.stages_overview_dataPlots = []
 #
 #         #------------------------------------------------------------------------
 #         #create user input frame
