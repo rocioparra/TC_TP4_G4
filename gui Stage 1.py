@@ -22,108 +22,33 @@ class TCExample:
         self.axis.clear()
         self.axis.grid(color='grey', linestyle='-')
         for filter in self.filters_input:
-            plots = self.m.get_plot(filter[2], self.current_plot.get(), self.normalizacion.get() != "Desnormalizado")
-            for plot in plots:
-                self.axis.set_xlabel(plot.x_label + " (" + plot.x_units + ")")
-                self.axis.set_ylabel(plot.y_label + " (" + plot.y_units + ")")
-                if plot.plot_type == 'c':
-                    if plot.logscale:
-                        self.axis.semilogx(plot.x_data, plot.y_data)
-                    else:
-                        self.axis.plot(plot.x_data, plot.y_data)
-                if plot.plot_type == 's':
-                    for point in plot.points:
-                        # voy graficando punto por punto
+            if filter[0].get():  #si esta seleccionada
+                plots = self.m.get_plot(filter[2], self.current_plot.get(), self.normalizacion.get() != "Desnormalizado")
+                for plot in plots:
+                    self.axis.set_xlabel(plot.x_label + " (" + plot.x_units + ")")
+                    self.axis.set_ylabel(plot.y_label + " (" + plot.y_units + ")")
+                    if plot.plot_type == 'c':
+                        if plot.logscale:
+                            self.axis.semilogx(plot.x_data, plot.y_data)
+                        else:
+                            self.axis.plot(plot.x_data, plot.y_data)
+                    if plot.plot_type == 's':
+                        for point in plot.points:
+                            # voy graficando punto por punto
 
-                        if point.format == 'x':
-                            self.axis.plot(point.x, point.y, color='green', marker=point.format)
-                        if point.format == 'o':
-                            self.axis.plot(point.x, point.y, color='blue', marker=point.format)
+                            if point.format == 'x':
+                                self.axis.plot(point.x, point.y, color='green', marker=point.format)
+                            if point.format == 'o':
+                                self.axis.plot(point.x, point.y, color='blue', marker=point.format)
 
+                    if plot.plot_type == 't':
+                        areas = plot.covered_areas
+                        for area in areas:
+                            print("top: ", area.top, " bottom: ", area.bottom, " left : ", area.left, " right: ", area.right)
+                            rect = matplotlib.patches.Rectangle((area.left, area.bottom), area.right - area.left, area.top - area.bottom, fill = True)
+                            self.axis.add_patch(rect)
         self.dataPlot.draw()
 
-
-    def plotPha(self):
-        print("plot pha")
-
-
-
-        self.m.get_plot()
-        for current_filter_info in self.filters_input:
-            if current_filter_info[0]:  #si esta seleccionada
-                print("imprimo fase del filtro ", current_filter_info[1].cget("text"))
-                #todo: dibujar
-                self.axis.clear()
-                self.axis.semilogx(self.w,self.phase)
-                self.axis.grid(color='grey',linestyle='-',linewidth=0.1)
-                self.axis.set_xlabel("$f (Hz)$")
-                self.axis.set_ylabel("$Phase (deg)$")
-                self.dataPlot.draw()
-
-    def plotPhaRet(self):
-        print("plot pha ret")
-        for current_filter_info in self.filters_input:
-            if current_filter_info[0]:  #si esta seleccionada
-                print("imprimo retardo de fase del filtro ", current_filter_info[1].cget("text"))
-                #todo: dibujar
-                self.axis.clear()
-                self.axis.semilogx(self.w,self.phase)
-                self.axis.grid(color='grey',linestyle='-',linewidth=0.1)
-                self.axis.set_xlabel("$f (Hz)$")
-                self.axis.set_ylabel("$Phase (deg)$")
-                self.dataPlot.draw()
-
-    def plotMag(self):
-        print("plot mag")
-        for current_filter_info in self.filters_input:
-            if current_filter_info[0]:  #si esta seleccionada
-                print("imprimo mag del filtro ", current_filter_info[1].cget("text"))
-                #todo: dibujar
-                self.axis.clear()
-                self.axis.semilogx(self.w,self.mag)
-                self.axis.grid(color='grey',linestyle='-',linewidth=0.1)
-                self.axis.set_xlabel("$f (Hz)$")
-                self.axis.set_ylabel("$V_{out}/V_{in} (dB)$")
-                self.dataPlot.draw()
-
-    def plotAte(self):
-        print("plot ate")
-        for current_filter_info in self.filters_input:
-            if current_filter_info[0]:  #si esta seleccionada
-                print("imprimo atenuacion del filtro ", current_filter_info[1].cget("text"))
-                #todo: dibujar
-                self.axis.clear()
-                self.axis.semilogx(self.w,self.mag)
-                self.axis.grid(color='grey',linestyle='-',linewidth=0.1)
-                self.axis.set_xlabel("$f (Hz)$")
-                self.axis.set_ylabel("$V_{out}/V_{in} (dB)$")
-                self.dataPlot.draw()
-
-    def plotStep(self):
-        print("plot step")
-        for current_filter_info in self.filters_input:
-            if current_filter_info[0]:  #si esta seleccionada
-                print("imprimo step del filtro ", current_filter_info[1].cget("text"))
-                #todo: dibujar
-                self.axis.clear()
-                self.axis.plot(self.stepT,self.stepMag)
-                self.axis.grid(color='grey',linestyle='-',linewidth=0.1)
-                self.axis.set_xlabel("$t (s)$")
-                self.axis.set_ylabel("$V_{out} (Volts)$")
-                self.dataPlot.draw()
-
-    def plotImp(self):
-        print("plot imp")
-        for current_filter_info in self.filters_input:
-            if current_filter_info[0]:  #si esta seleccionada
-                print("imprimo impulsiva del filtro ", current_filter_info[1].cget("text"))
-                #todo: dibujar
-                self.axis.clear()
-                self.axis.plot(self.impT,self.impMag)
-                self.axis.grid(color='grey',linestyle='-',linewidth=0.1)
-                self.axis.set_xlabel("$t (s)$")
-                self.axis.set_ylabel("$V_{out} (Volts)$")
-                self.dataPlot.draw()
 
     def set_filter_type(self):
         self.is_filter_type_set = True
@@ -153,7 +78,6 @@ class TCExample:
             nmin = int(self.nfijo_value.get())
             nmax = int(self.nfijo_value.get())
 
-        #todo: Q en infinito si no hay nada
         Qmax = 200
         if len(self.qmax_value.get()):
             Qmax = float(self.qmax_value.get())
@@ -168,8 +92,6 @@ class TCExample:
 
         template_parameters_list_to_send = TemplateParameters(*template_parameters_list)
 
-        new_filter_input = []                #checkbutton y variable para ver si esta seleccionado o no
-        new_filter_input.append(IntVar())    #guarda si esta seleccionado o no
 
         normal = 1
         dn = self.normalizacion.get()
@@ -178,15 +100,16 @@ class TCExample:
 
         auxTup = self.m.add_filter(self.filter_type_name.get(), self.approximation_type_name.get(), \
                           template_parameters_list_to_send, nmin, nmax, Qmax, normal)
-        new_filter_input.append(auxTup[0])
-        new_filter_input.append(auxTup[1])
-        new_filter_input.append(Checkbutton(self.existing_filters_frame, variable=new_filter_input[0], text=new_filter_input[1], state='normal'))
-        new_filter_input[3].pack(side = TOP, fill='x')
 
-
-        if new_filter_input[2] == -1:         #hubo error
-            messagebox.showinfo("Error", new_filter_input[1])
+        if auxTup[1] == -1:         #si hubo error
+            messagebox.showinfo("Error", auxTup[0])
         else:
+            new_filter_input = []
+            new_filter_input.append(IntVar())   # guarda si esta seleccionado o no
+            new_filter_input.append(auxTup[0])  # nombre
+            new_filter_input.append(auxTup[1])  # filter index
+            new_filter_input.append(Checkbutton(self.existing_filters_frame, variable=new_filter_input[0], text=new_filter_input[1], state='normal'))
+            new_filter_input[3].pack(side = TOP, fill='x')
             self.filters_input.append(new_filter_input)
 
 
@@ -469,9 +392,11 @@ class TCExample:
         nav = NavigationToolbar2Tk(self.dataPlot, self.root)
         nav.update()
         self.dataPlot._tkcanvas.pack(side=TOP, fill=X, expand=True)
-        self.plotMag()
+        # self.plotMag()
         #-------------------------------------------------------------------------------
         self.root.mainloop()
 
 if __name__ == "__main__":
     ex = TCExample()
+gui Stage 1.py
+Mostrando gui Stage 1.py.
