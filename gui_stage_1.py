@@ -11,7 +11,7 @@ from filter_template import TemplateParameters
 import math
 import matplotlib.pyplot
 import matplotlib.markers
-
+import gui_stage_2
 
 class TCExample:
 
@@ -129,8 +129,8 @@ class TCExample:
 
     def stage_2_cb(self):
         for current_filter_info in self.filters_input:
-            if current_filter_info[0]:
-                print("mando a la etapa 2 a los filtros ", current_filter_info[1].cget("text"))
+            if current_filter_info[0].get():
+                gui_stage_2.GuiStage2(current_filter_info[2], self.m)
 
     def delete_unselected_cb(self):
         for i in range(len(self.filters_input)-1, -1, -1):  #recorro de atras para adelante para no modificar el indice cuando elimino

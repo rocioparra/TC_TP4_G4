@@ -5,20 +5,18 @@ from scipy import signal
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends._backend_tk import NavigationToolbar2Tk
 from matplotlib.figure import Figure
-from tkinter import *
+from tkinter import*
+import model
 
 
-class TCExample:
+class GuiStage2:
 
     def show_credits(self):
         messagebox.showinfo("Credits", "La sororidad 2018")
 
     def populate_stages_data_frame(self, stages_data_frame):
-        self.gain = StringVar()
-        self.Q = StringVar()
-        self.DR = StringVar()
-        self.vmin = StringVar()
-        self.vmax = StringVar()
+
+
 
         gain_frame = Frame(stages_data_frame)
         Q_frame = Frame(stages_data_frame)
@@ -32,13 +30,16 @@ class TCExample:
         vmin_frame.pack(side=TOP, fill = 'x')
         vmax_frame.pack(side=TOP, fill = 'x')
 
-
-
-        Entry(gain_frame, textvariable = self.gain, state = 'normal').pack(side = RIGHT)
-        Entry(Q_frame, textvariable = self.Q, state = 'disabled').pack(side = RIGHT)
-        Entry(DR_frame, textvariable = self.DR, state = 'disabled').pack(side = RIGHT)
-        Entry(vmin_frame, textvariable = self.vmin, state = 'normal').pack(side = RIGHT)
-        Entry(vmax_frame, textvariable = self.vmax, state = 'normal').pack(side = RIGHT)
+        self.gain = Entry(gain_frame, state = NORMAL)
+        self.gain.pack(side=RIGHT)
+        self.Q = Entry(Q_frame, state=DISABLED)
+        self.Q.pack(side=RIGHT)
+        self.DR = Entry(DR_frame, state=DISABLED)
+        self.DR.pack(side=RIGHT)
+        self.vmin = Entry(vmin_frame, state=NORMAL)
+        self.vmin.pack(side=RIGHT)
+        self.vmax = Entry(vmax_frame, state=NORMAL)
+        self.vmax.pack(side=RIGHT)
 
         Label(gain_frame, text="G").pack(side = RIGHT)
         Label(Q_frame, text="Q").pack(side = RIGHT)
@@ -47,6 +48,7 @@ class TCExample:
         Label(vmax_frame, text="V maximo").pack(side = RIGHT)
 
         self.set_data_button = Button(stages_data_frame, text = "Set data", command = self.set_data)
+        self.set_data_button.pack()
 
     def populate_stages_plot_control_frame(self, stages_plot_control_frame):
         self.plot_mode_list = ["Individual", "Acumulative"]
@@ -138,42 +140,59 @@ class TCExample:
             if (self.stages_overview_scroll_offset + i) < len(self.stages_overview_subframes):
                 self.stages_overview_subframes[self.stages_overview_scroll_offset + i].pack(side=LEFT)
 
-    def add_stage_to_stage_overview_frame(self, amount):
+    def add_stage(self, stage):
 
-        for i in range(amount):
-            f = Figure()
-            new_stage_frame = Frame(self.stages_overview_frame)
-            new_is_stage_selected = IntVar()
-            Checkbutton(new_stage_frame, variable=new_is_stage_selected, state='normal', text='Stage' + str(i+1)).pack(side=BOTTOM, fill=X)   #todo: agregar nombre de la etapa
-            graph = Canvas(new_stage_frame, bg='red', width=100)
-            self.stages_overview_dataPlots.append(FigureCanvasTkAgg(f, master=graph))
+        f = Figure()
+        new_stage_frame = Frame(self.stages_overview_frame)
+        new_is_stage_selected = IntVar()
+        Checkbutton(new_stage_frame, variable=new_is_stage_selected, state='normal', text='Stage' + str(i+1)).pack(side=BOTTOM, fill=X)   #todo: agregar nombre de la etapa
+        graph = Canvas(new_stage_frame, bg='red', width=100)
 
-            # todo: dibujar en el canva s el filtro correspondiente
-            graph.pack(side=TOP, expand=True)
-            self.stages_overview_subframes.append(new_stage_frame)
-            self.stages_overview_is_selected.append(new_is_stage_selected)
-            self.draw_stages_overview() #: para ver que efectivamente se crean!
+        axis = FigureCanvasTkAgg(f, master=graph)
+        # todo: dibujar en el canva s el filtro correspondiente
+        self.stages_overview_dataPlots.append(axis)
+
+        graph.pack(side=TOP, expand=True)
+        self.stages_overview_subframes.append(new_stage_frame)
+        self.stages_overview_is_selected.append(new_is_stage_selected)
+        #self.draw_stages_overview() #: para ver que efectivamente se crean!
 
     def create_stage_with_selected_cb(self):
         print("create_stage_with_selected_cb")
         #add_stage
 
     def automatic_stages_cb(self):
-        print("automatic_stages_cb")
-        #add_stage
+
+        self.m.auto_stages(self.filter_id, float(self.vmin.get()), float(self.vmax.get()))
+        self.stages_plots.clear()
+        self.stages_plots = self.m.get_auto_stages_plots(self.filter_id)
+
+        self.stages_p_strings.clear()
+        self.stages_z_strings.clear()
+        self.stages_k_strings.clear()
+
+        for i in range(len(self.stages_plots)):
+            self.stages_p_strings.append(self.m.get_auto_stage_p_strings(self.filter_id, i))
+            self.stages_z_strings.append(self.m.get_auto_stage_z_strings(self.filter_id, i))
+            self.stages_k_strings.append(self.m.get_auto_stage_k_strings(self.filter_id, i))
+
 
     def set_data(self):
-        print("G = ", self.gain.get(), ", Vmin = ", self.vmin.get(), ", Vmax = ", self.vmax.get())
-        # self.gain = StringVar()
-        # self.vmin = StringVar()
-        # self.vmax = StringVar()
+        print("G = ", int(self.gain.get()), ", Vmin = ", int(self.vmin.get()), ", Vmax = ", self.vmax.get())
 
-    def __init__(self):
 
+    def __init__(self, filter_id, m):
+        self.gain_input = None
         self.root = Tk()
         self.root.title("Tc Example")
 
         #set_filter
+
+        self.gain = StringVar()
+        self.Q = StringVar()
+        self.DR = StringVar()
+        self.vmin = StringVar()
+        self.vmax = StringVar()
 
         # todo: obtener de Tomi:
         self.poles_list = []
@@ -189,6 +208,12 @@ class TCExample:
         f = Figure()
         self.axis = f.add_subplot(111)
 
+        self.filter_id = filter_id
+        self.m = m
+        self.stages_plots = []
+        self.stages_p_strings = []
+        self.stages_z_strings = []
+        self.stages_k_strings = []
 
         #------------------------------------------------------------------------
         # menu de la ventana
@@ -231,12 +256,13 @@ class TCExample:
         self.stages_plot_frame.pack(anchor='ne', fill='x', expand=True)
         self.populate_stages_plot_frame(self.stages_plot_frame)
 
-        self.stages_overview_frame = LabelFrame(self.stages_right_frame, text="stages", width=40)
-        self.stages_overview_frame.pack(anchor='se', fill = 'x', expand=True)
-        self.populate_stages_overview_frame(self.stages_overview_frame)
-        self.add_stage_to_stage_overview_frame(3)         #agrego 3 frames a stage overview frame
-
         self.stages_overview_dataPlots = []
+        self.stages_overview_frame = LabelFrame(self.stages_right_frame, text="stages", width=40)
+        self.stages_overview_frame.pack(anchor='se', fill='x', expand=True)
+        self.populate_stages_overview_frame(self.stages_overview_frame)
+
+
+
 #
 #         #------------------------------------------------------------------------
 #         #create user input frame
@@ -473,5 +499,5 @@ class TCExample:
 #         #-------------------------------------------------------------------------------
         self.root.mainloop()
 
-if __name__ == "__main__":
-    ex = TCExample()
+#if __name__ == "__main__":
+#    ex = GuiStage2()

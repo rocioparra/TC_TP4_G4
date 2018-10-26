@@ -71,20 +71,26 @@ class Stage:
     @staticmethod
     def get_min_max_attenuation(poles, zeros, gain_factor, pass_bands):
 
+
         filter.Filter.re_add_complex(poles)
         filter.Filter.re_add_complex(zeros)
+
 
         sys = signal.ZerosPolesGain(zeros, poles, gain_factor)
         max_at = -math.inf
         min_at = math.inf
-
-        for pass_band in pass_bands:
-            w = np.logspace(start=math.log10(pass_band[0]), stop=math.log10(pass_band[1]), endpoint=True, base=10)
-            [_, attenuation, _] = signal.bode(system=sys, w=w)
-            if min(attenuation) < min_at:
-                min_at = min(attenuation)
-            if max(attenuation) > max_at:
-                max_at = max(attenuation)
+        if len(zeros) == 2 and len(poles) < 2:
+            for pass_band in pass_bands:
+                sup_band = pass_band[1]
+                if sup_band == math.inf:
+                    sup_band = 10000 * pass_band[0]
+                w = np.logspace(start=math.log10(pass_band[0]), stop=math.log10(sup_band), endpoint=True, base=10)
+                [_, mag, _] = signal.bode(system=sys, w=w)
+                attenuation = -1*mag
+                if min(attenuation) < min_at:
+                    min_at = min(attenuation)
+                if max(attenuation) > max_at:
+                    max_at = max(attenuation)
 
         filter.Filter.add_only_one_complex(poles)
         filter.Filter.add_only_one_complex(zeros)
