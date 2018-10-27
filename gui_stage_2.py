@@ -174,8 +174,7 @@ class GuiStage2:
         for i in range(len(self.stages_plots)):
             self.stages_p_strings.append(self.m.get_auto_stage_p_strings(self.filter_id, i))
             self.stages_z_strings.append(self.m.get_auto_stage_z_strings(self.filter_id, i))
-            self.stages_k_strings.append(self.m.get_auto_stage_k_strings(self.filter_id, i))
-
+            self.stages_k_strings.append(self.m.get_auto_stages_k(self.filter_id, i))
 
     def set_data(self):
         print("G = ", int(self.gain.get()), ", Vmin = ", int(self.vmin.get()), ", Vmax = ", self.vmax.get())

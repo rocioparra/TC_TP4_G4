@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import copy
 import stages
 import math
+import random
 
 class Filter(ABC):
     def __init__(self, filter_type, approx):
@@ -223,39 +224,52 @@ class Filter(ABC):
         else:
             return 0
 
-    # --------------------------
-    # auto_stage_decomposition
-    # -------------------------
-    # auto_stage_decomposition obtiene la cadena de etapas que intentan maximizar el rd total
-
-    # INPUT:
-        # 1) vout_min: minimo vout para el filtro para superar el piso de ruido
-        # 2) vout_max: maximo vout para el filtro total para que no saturen los opamps en alguna de las etapas
-    # OUTPUT:
-        # lista total de etapas de la cadena, en orden.
-    def auto_stage_decomposition(self, vout_min, vout_max):
-
-        self.stages.clear()
-
-        zeros = self.denormalized_zeros
-        poles = self.denormalized_poles
-
-        n = len(poles)  # para asignarle a todos la misma ganancia al principio
-
-        for zero in zeros:
-            st = stages.Stage.find_best_partner(zero=zero, poles=poles, gain_factor=self.denormalized_k**(1/float(n)),
-                                                vout_min=vout_min, vout_max=vout_max,
-                                                pass_bands=self.denormalized_template.get_pass_bands())
-            self.stages.append(st)
-        for pole in poles:              # me quede sin ceros, procedo con los polos!
-            self.stages.append(stages.Stage(pole, [], self.denormalized_k**(1/float(n))))
-
-        # ahora corrijo la ganancia para el principio
-        self.stages[0].gain_factor = self.denormalized_k * (1 - math.log10(self.denormalized_k))
-        for i in range(1, len(self.stages), 1):
-            self.stages[i].gain_factor = (float(self.denormalized_k) / (float(self.denormalized_k) - math.log10(self.denormalized_k)))**(1/float(n-1))
-
-        return self.stages
+    # # --------------------------
+    # # auto_stage_decomposition
+    # # -------------------------
+    # # auto_stage_decomposition obtiene la cadena de etapas que intentan maximizar el rd total
+    #
+    # # INPUT:
+    #     # 1) vout_min: minimo vout para el filtro para superar el piso de ruido
+    #     # 2) vout_max: maximo vout para el filtro total para que no saturen los opamps en alguna de las etapas
+    # # OUTPUT:
+    #     # lista total de etapas de la cadena, en orden.
+    # def auto_stage_decomposition(self, vout_min, vout_max):
+    #
+    #     self.stages.clear()
+    #
+    #     zeros = copy.deepcopy(self.denormalized_zeros)
+    #     poles = copy.deepcopy(self.denormalized_poles)
+    #
+    #     n = len(poles)  # para asignarle a todos la misma ganancia al principio
+    #     is_entirely_real = True
+    #     if n == len(zeros):
+    #         for zero in zeros:
+    #             if zero.imag:
+    #                 is_not_entirely_real = False
+    #                 break
+    #
+    #     if not is_entirely_real:
+    #         zeros = [[zeros[0], zeros[1]], zeros[2:len(zeros)]]
+    #     for zero in zeros:
+    #
+    #         gf = abs(self.denormalized_k)**(1/float(abs(n)))
+    #         st = stages.Stage.find_best_partner(zero=zero, poles=poles, gain_factor=gf,
+    #                                             vout_min=vout_min, vout_max=vout_max,
+    #                                             pass_bands=self.denormalized_template.get_pass_bands())
+    #         if st is None:
+    #             self.stages.append(st)
+    #     for pole in poles:              # me quede sin ceros, procedo con los polos!
+    #         self.stages.append(stages.Stage(pole, [], abs(self.denormalized_k**(1/float(n)))))
+    #
+    #     # ahora corrijo la ganancia para el principio
+    #     if len(stages) > 0:
+    #         self.stages[0].gain_factor = self.denormalized_k * (1 - math.log10(abs(self.denormalized_k)))
+    #
+    #     for i in range(1, len(self.stages), 1):
+    #         self.stages[i].gain_factor = (float(self.denormalized_k) / (float(self.denormalized_k) - math.log10(abs(self.denormalized_k))))**(1/float(abs(n-1)))
+    #
+    #     return self.stages
 
     # --------------------------
     # single_stage_decomposition
@@ -306,3 +320,33 @@ class Filter(ABC):
 
     def delete_stage(self, stage):
         self.stages.remove(stage)
+
+
+    def auto_stage_decomposition(self, vout_min, vout_max):
+
+        self.stages.clear()
+
+        zeros = copy.deepcopy(self.denormalized_zeros)
+        poles = copy.deepcopy(self.denormalized_poles)
+
+        gf = abs(self.denormalized_k) ** (1 / float(abs(len(poles))))
+
+        i = 0
+        if len(poles) < len(zeros):
+            for pole in poles:
+                if pole.imag:
+                    partner= zeros[random.randint(0,len(zeros)-1)]
+                    st = stages.Stage.find_best_partner(zero=[partner], poles=[pole], gain_factor=gf,
+                                                        vout_min=vout_min, vout_max=vout_max,
+                                                        pass_bands=self.denormalized_template.get_pass_bands())
+                    self.stages.append(st)
+        else:
+            for pole in poles:
+                partner = zeros[i]
+                i = i+1
+                st = stages.Stage.find_best_partner(zero=[partner], poles=[pole], gain_factor=gf,
+                                                    vout_min=vout_min, vout_max=vout_max,
+                                                    pass_bands=self.denormalized_template.get_pass_bands())
+                self.stages.append(st)
+
+        return self.stages
